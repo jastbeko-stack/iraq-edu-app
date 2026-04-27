@@ -1,0 +1,126 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../features/courses/presentation/course_details_screen.dart';
+import '../../features/home/presentation/home_screen.dart';
+import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/teachers/presentation/teacher_profile_screen.dart';
+import '../../shared/widgets/app_shell.dart';
+
+/// Route name constants used throughout the app.
+abstract final class AppRoute {
+  static const home = 'home';
+  static const courses = 'courses';
+  static const teachers = 'teachers';
+  static const profile = 'profile';
+  static const teacherProfile = 'teacher-profile';
+  static const courseDetails = 'course-details';
+}
+
+/// Builds the [GoRouter] used by [MaterialApp.router].
+///
+/// The bottom navigation lives inside [AppShell] via a `StatefulShellRoute`,
+/// which gives each tab its own navigation stack. Detail screens (teacher
+/// profile, course details) are pushed on top of the active tab stack so the
+/// shell remains visible only on top-level routes.
+GoRouter buildRouter() {
+  return GoRouter(
+    initialLocation: '/',
+    routes: [
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                name: AppRoute.home,
+                builder: (context, state) => const HomeScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'teacher/:id',
+                    name: AppRoute.teacherProfile,
+                    builder: (context, state) => TeacherProfileScreen(
+                      teacherId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'course/:id',
+                    name: AppRoute.courseDetails,
+                    builder: (context, state) => CourseDetailsScreen(
+                      courseId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/courses',
+                name: AppRoute.courses,
+                builder: (context, state) => const _CoursesTabPlaceholder(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/teachers',
+                name: AppRoute.teachers,
+                builder: (context, state) => const _TeachersTabPlaceholder(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                name: AppRoute.profile,
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+/// Placeholder screen for the dedicated "Courses" tab (full catalog view).
+///
+/// Replaced in a follow-up task with a paginated list backed by Firestore.
+class _CoursesTabPlaceholder extends StatelessWidget {
+  const _CoursesTabPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _ComingSoonScaffold(title: 'الكورسات');
+  }
+}
+
+/// Placeholder screen for the dedicated "Teachers" tab.
+class _TeachersTabPlaceholder extends StatelessWidget {
+  const _TeachersTabPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _ComingSoonScaffold(title: 'المدرسون');
+  }
+}
+
+class _ComingSoonScaffold extends StatelessWidget {
+  const _ComingSoonScaffold({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: const Center(child: Text('قريباً')),
+    );
+  }
+}

@@ -1,0 +1,72 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
+import 'firebase_options.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await _initializeFirebase();
+  runApp(const ProviderScope(child: IraqEduApp()));
+}
+
+/// Initializes Firebase if real options have been generated via
+/// `flutterfire configure`. While the placeholder options are in place, this
+/// is a no-op so the app boots without crashing during scaffolding.
+Future<void> _initializeFirebase() async {
+  final options = DefaultFirebaseOptions.currentPlatform;
+  if (options == null) {
+    if (kDebugMode) {
+      debugPrint(
+        '[firebase] Skipping Firebase.initializeApp — placeholder options. '
+        'Run `flutterfire configure` to wire up your project.',
+      );
+    }
+    return;
+  }
+  await Firebase.initializeApp(options: options);
+}
+
+/// Root widget. Configures Arabic-only localization, the Material 3 theme,
+/// and the [GoRouter] navigation graph.
+class IraqEduApp extends StatefulWidget {
+  const IraqEduApp({super.key});
+
+  @override
+  State<IraqEduApp> createState() => _IraqEduAppState();
+}
+
+class _IraqEduAppState extends State<IraqEduApp> {
+  late final _router = buildRouter();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: 'منصة العراق التعليمية',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
+      routerConfig: _router,
+      // Arabic-only for now. Add additional locales here when ready.
+      locale: const Locale('ar'),
+      supportedLocales: const [Locale('ar')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      builder: (context, child) {
+        // Force RTL regardless of device locale so layout is consistent.
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+  }
+}

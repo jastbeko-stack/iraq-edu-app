@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../shared/models/sample_data.dart';
+import '../../coupons/data/coupon_repository.dart';
 
 /// Detailed view for a single teacher: bio, stats, and the list of courses
-/// they teach. Course tiles deep-link to [CourseDetailsScreen].
-class TeacherProfileScreen extends StatelessWidget {
+/// they teach. Course tiles deep-link to [CourseDetailsScreen] and reflect
+/// the live unlock state from [isCourseUnlockedProvider].
+class TeacherProfileScreen extends ConsumerWidget {
   const TeacherProfileScreen({required this.teacherId, super.key});
 
   final String teacherId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final teacher = SampleData.teacherById(teacherId);
     final theme = Theme.of(context);
 
@@ -24,6 +27,7 @@ class TeacherProfileScreen extends StatelessWidget {
     }
 
     final courses = SampleData.coursesByTeacher(teacher.id);
+    final unlocked = ref.watch(unlockedCoursesProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(teacher.name)),
@@ -105,21 +109,27 @@ class TeacherProfileScreen extends StatelessWidget {
           if (courses.isEmpty)
             Text('قريباً', style: theme.textTheme.bodyMedium)
           else
-            ...courses.map(
-              (c) => Card(
+            for (final c in courses)
+              Card(
                 margin: const EdgeInsets.only(bottom: 10),
                 child: ListTile(
                   leading: const Icon(Icons.menu_book),
                   title: Text(c.title),
                   subtitle: Text('${c.lessonsCount} درس'),
-                  trailing: Icon(c.isLocked ? Icons.lock : Icons.lock_open),
+                  trailing: Icon(
+                    !c.isLocked || unlocked.contains(c.id)
+                        ? Icons.lock_open
+                        : Icons.lock,
+                    color: !c.isLocked || unlocked.contains(c.id)
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.error,
+                  ),
                   onTap: () => context.pushNamed(
                     AppRoute.courseDetails,
                     pathParameters: {'id': c.id},
                   ),
                 ),
               ),
-            ),
         ],
       ),
     );

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../shared/models/course.dart';
 import '../../../shared/models/sample_data.dart';
 import '../../../shared/models/teacher.dart';
+import '../../coupons/data/coupon_repository.dart';
 
 /// Landing screen showing the welcome banner, featured teachers, and
 /// featured courses.
 ///
-/// Sample data is read from [SampleData] for now and will be replaced with a
-/// Firestore-backed repository in a follow-up task.
+/// Course tiles read [isCourseUnlockedProvider] so their lock icon flips
+/// reactively after a coupon is redeemed.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -51,18 +53,17 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _SectionHeader(title: 'الكورسات المميزة', onViewAll: () {}),
-          ...SampleData.courses.map(
-            (c) => Padding(
+          for (final course in SampleData.courses)
+            Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: _CourseCard(
-                course: c,
+                course: course,
                 onTap: () => context.pushNamed(
                   AppRoute.courseDetails,
-                  pathParameters: {'id': c.id},
+                  pathParameters: {'id': course.id},
                 ),
               ),
             ),
-          ),
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -202,15 +203,18 @@ class _TeacherCard extends StatelessWidget {
   }
 }
 
-class _CourseCard extends StatelessWidget {
+class _CourseCard extends ConsumerWidget {
   const _CourseCard({required this.course, required this.onTap});
 
   final Course course;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final unlockedByCoupon = ref.watch(isCourseUnlockedProvider(course.id));
+    final isUnlocked = !course.isLocked || unlockedByCoupon;
+
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -251,11 +255,11 @@ class _CourseCard extends StatelessWidget {
                     Row(
                       children: [
                         Icon(
-                          course.isLocked ? Icons.lock : Icons.lock_open,
+                          isUnlocked ? Icons.lock_open : Icons.lock,
                           size: 16,
-                          color: course.isLocked
-                              ? theme.colorScheme.error
-                              : theme.colorScheme.primary,
+                          color: isUnlocked
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.error,
                         ),
                         const SizedBox(width: 6),
                         Text(

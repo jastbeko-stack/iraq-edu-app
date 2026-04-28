@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../../../core/security/screen_protection.dart';
 import '../../data/bunny_stream_service.dart';
 
 /// Professional video player for a lesson.
@@ -38,9 +39,21 @@ class _LessonVideoPlayerState extends ConsumerState<LessonVideoPlayer> {
   ChewieController? _chewieController;
   Object? _error;
 
+  /// True while the iOS native side reports the screen is being captured
+  /// (recorded or AirPlay-mirrored). We blur the video to discourage
+  /// recording — Apple does not give us a way to *block* it.
+  bool _iosCapturing = false;
+  VoidCallback? _iosCaptureSubscription;
+
   @override
   void initState() {
     super.initState();
+    _iosCaptureSubscription = ScreenProtection.listenIos(
+      onCaptureChanged: (isCapturing) {
+        if (mounted) setState(() => _iosCapturing = isCapturing);
+        if (isCapturing) _videoController?.pause();
+      },
+    );
     _bootstrap();
   }
 
@@ -106,6 +119,7 @@ class _LessonVideoPlayerState extends ConsumerState<LessonVideoPlayer> {
 
   @override
   void dispose() {
+    _iosCaptureSubscription?.call();
     _disposeControllers();
     super.dispose();
   }
@@ -116,13 +130,61 @@ class _LessonVideoPlayerState extends ConsumerState<LessonVideoPlayer> {
       aspectRatio: 16 / 9,
       child: ColoredBox(
         color: Colors.black,
-        child: switch ((_error, _chewieController)) {
-          (final err?, _) => _ErrorState(error: err),
-          (_, final chewie?) => Chewie(controller: chewie),
-          _ => const Center(
-            child: CircularProgressIndicator(color: Colors.white),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            switch ((_error, _chewieController)) {
+              (final err?, _) => _ErrorState(error: err),
+              (_, final chewie?) => Chewie(controller: chewie),
+              _ => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            },
+            if (_iosCapturing) const _RecordingBlocker(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen overlay shown while iOS reports the screen is being
+/// captured. Anything *behind* this widget gets effectively hidden in
+/// the recording — we cannot prevent the capture, only what shows up.
+class _RecordingBlocker extends StatelessWidget {
+  const _RecordingBlocker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.videocam_off, color: Colors.white, size: 36),
+              const SizedBox(height: 8),
+              Text(
+                'تم إيقاف التشغيل أثناء التسجيل',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'تسجيل الشاشة غير مسموح به لحماية محتوى الكورس.',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.white70),
+              ),
+            ],
           ),
-        },
+        ),
       ),
     );
   }

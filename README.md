@@ -2,20 +2,24 @@
 
 A Flutter mobile application for an Iraqi educational platform targeting **6th Grade Scientific** high school students. Arabic-first, fully RTL.
 
-> **Status:** Project scaffolding. The five product features (phone auth, multi-teacher dashboard, Bunny.net video, coupon redemption, screenshot/recording prevention) are designed for but not yet implemented — see [Roadmap](#roadmap).
+> **Status:** UI + flow complete. Real backend (Firebase / Bunny.net) is wired through abstractions that can be flipped from local stubs to production by configuring credentials and deploying the Cloud Functions in `/functions`.
 
 ---
 
 ## Tech stack
 
-| Concern             | Choice                                                                |
-|---------------------|-----------------------------------------------------------------------|
-| Framework           | Flutter (stable, Dart 3.11+) — Material 3                             |
+| Concern             | Choice                                                                     |
+|---------------------|----------------------------------------------------------------------------|
+| Framework           | Flutter (stable, Dart 3.11+) — Material 3                                  |
 | Localization / RTL  | `flutter_localizations` + `intl` (Arabic-only, forced `TextDirection.rtl`) |
-| State management    | `flutter_riverpod`                                                    |
-| Routing             | `go_router` (`StatefulShellRoute.indexedStack` for bottom-nav)        |
-| Backend             | Firebase (Auth + Firestore + Cloud Functions) — wired with placeholders |
-| Typography          | Cairo (via `google_fonts`)                                            |
+| State management    | `flutter_riverpod`                                                         |
+| Routing             | `go_router` (`StatefulShellRoute.indexedStack` for bottom-nav)             |
+| Persistence         | `shared_preferences` (local) → swap to Firestore via Cloud Functions       |
+| Video player        | `chewie` + `video_player` with token-authed Bunny.net Stream HLS           |
+| Auth                | Local stub today — Firebase Phone OTP via `firebase_auth` once configured  |
+| Screen protection   | `flutter_windowmanager_plus` (Android FLAG_SECURE) + iOS detection channel |
+| Backend logic       | Firebase Cloud Functions (`/functions`, TypeScript)                        |
+| Typography          | Cairo (via `google_fonts`)                                                 |
 
 ---
 
@@ -23,27 +27,30 @@ A Flutter mobile application for an Iraqi educational platform targeting **6th G
 
 ```
 lib/
-├── main.dart                       # Entry point: Firebase init, MaterialApp.router, RTL
+├── main.dart                       # Entry: Firebase init, screen protection, MaterialApp.router, RTL
 ├── firebase_options.dart           # PLACEHOLDER — replace with `flutterfire configure` output
 ├── core/
 │   ├── router/app_router.dart      # GoRouter graph + AppRoute name constants
-│   └── theme/
-│       ├── app_colors.dart         # Brand palette
-│       └── app_theme.dart          # Material 3 light/dark themes (Cairo font)
+│   ├── security/screen_protection  # FLAG_SECURE (Android) + iOS capture detection channel
+│   └── theme/                      # Material 3 light/dark themes (Cairo font)
 ├── features/
-│   ├── auth/                       # (stub) Phone OTP flow lands here
-│   ├── home/presentation/          # Home screen (welcome, featured teachers, courses)
-│   ├── teachers/presentation/      # Teacher profile screen
-│   ├── courses/presentation/       # Course details screen + coupon sheet
-│   └── profile/presentation/       # Profile / settings screen
+│   ├── auth/                       # Phone OTP UI flow + AuthController stub
+│   ├── coupons/                    # Course coupons (no prefix) — sheet, repo, providers
+│   ├── courses/                    # Course details + lesson list
+│   ├── home/                       # Home (welcome, featured teachers, courses)
+│   ├── lessons/                    # Player screen + Bunny stream service abstraction
+│   ├── profile/                    # حسابي — auth state + entitlements + settings
+│   ├── study_guides/               # الملازم — separate store with G- prefixed coupons
+│   └── teachers/                   # Teacher profile screen
 ├── shared/
 │   ├── models/                     # Teacher, Course, Lesson, SampleData
-│   └── widgets/app_shell.dart      # Bottom-nav shell hosting the four tabs
-└── l10n/
-    └── app_ar.arb                  # Arabic strings (template ARB)
-```
+│   └── widgets/app_shell.dart      # 4-tab bottom-nav (Home / Guides / Teachers / Profile)
+└── l10n/app_ar.arb                 # Arabic strings (template ARB)
 
-`l10n.yaml` configures Flutter's gen-l10n tool. Strings are co-located in `lib/l10n/`. While the scaffolding uses inline Arabic literals on stub screens (for readability while reviewing the structure), all user-facing strings should migrate to `AppLocalizations` as features are built out.
+functions/                          # Cloud Functions: redeemCoupon + getSignedLessonUrl
+firestore.rules                     # Locks coupons & entitlements to Cloud Functions only
+firebase.json                       # Functions + Firestore deploy config
+```
 
 ---
 
@@ -51,7 +58,7 @@ lib/
 
 ### 1. Install Flutter
 
-This project targets the `stable` channel. Install via [flutter.dev/docs/get-started/install](https://docs.flutter.dev/get-started/install) and confirm:
+This project targets the `stable` channel.
 
 ```bash
 flutter --version   # 3.41.x or newer
@@ -65,9 +72,22 @@ cd iraq_edu_app
 flutter pub get
 ```
 
-### 3. Wire up Firebase
+### 3. Run the app
 
-The repo ships with a placeholder `lib/firebase_options.dart` so the app boots without a real Firebase project. To wire up your own:
+```bash
+flutter run                # mobile (Android/iOS)
+flutter run -d chrome      # web preview
+```
+
+The app boots fully without any external setup — the local stubs cover phone auth, coupon redemption, and video playback (a public sample MP4).
+
+---
+
+## Going to production
+
+The four steps below convert local stubs to a real backend. They are independent — wire whichever you need first.
+
+### 4. Wire up Firebase (Auth + Firestore)
 
 ```bash
 dart pub global activate flutterfire_cli
@@ -78,15 +98,62 @@ This regenerates `lib/firebase_options.dart` and registers Android / iOS apps wi
 
 You'll also need to:
 
-- **Android:** drop `google-services.json` into `android/app/` and apply the Google Services plugin (FlutterFire CLI handles this).
-- **iOS:** drop `GoogleService-Info.plist` into `ios/Runner/` (FlutterFire CLI handles this).
-- **Auth:** in the Firebase console enable **Phone** sign-in and add your test phone numbers under *Authentication → Sign-in method → Phone*.
+- **Android:** drop `google-services.json` into `android/app/` (handled by FlutterFire CLI).
+- **iOS:** drop `GoogleService-Info.plist` into `ios/Runner/` (handled by FlutterFire CLI).
+- **Auth:** in the Firebase console enable **Phone** sign-in and add test numbers under *Authentication → Sign-in method → Phone*.
+- Replace `AuthController` (`lib/features/auth/data/auth_controller.dart`) with the `firebase_auth` `verifyPhoneNumber` flow — the state machine (`AuthSignedOut`, `AuthCodeSent`, `AuthSignedIn`, `AuthError`) already mirrors Firebase's API exactly, so the swap is one file.
 
-### 4. Run the app
+### 5. Deploy Cloud Functions (coupon redemption + Bunny signing)
 
 ```bash
-flutter run
+cd functions
+npm install
+
+firebase functions:secrets:set BUNNY_STREAM_LIBRARY_ID
+firebase functions:secrets:set BUNNY_STREAM_CDN_HOSTNAME
+firebase functions:secrets:set BUNNY_STREAM_TOKEN_SIGNING_KEY
+
+npm run build
+firebase deploy --only functions
+firebase deploy --only firestore:rules
 ```
+
+Two callables ship in `functions/src/index.ts`:
+
+- **`redeemCoupon`** — atomic Firestore transaction. Validates the code, marks it used, and grants entitlements. Prevents double-spend even under concurrent requests.
+- **`getSignedLessonUrl`** — verifies the caller has access to the parent course, then mints a short-lived token-authenticated Bunny Stream HLS URL using the SHA-256 algorithm Bunny documents.
+
+After deploy, swap `CouponRepository` and `BunnyStreamService` to call these callables. The Riverpod providers (`couponRepositoryProvider`, `bunnyStreamServiceProvider`) are the only edit points.
+
+### 6. Bunny.net Stream
+
+The signing key **must never ship in the app** — the deploy step above sets it as a secret only the function reads. Token signing algorithm (in `functions/src/index.ts`):
+
+```
+tokenPath = "/<videoGuid>/playlist.m3u8"
+expires   = now + 1 hour
+token     = base64url( sha256_bytes(signingKey + tokenPath + expires) )
+url       = https://<cdnHost><tokenPath>?token=<token>&expires=<expires>
+```
+
+Reference: [Bunny Stream — Token Authentication](https://docs.bunny.net/docs/stream-embedding-videos-token-authentication).
+
+### 7. Screen protection
+
+- **Android** — `flutter_windowmanager_plus` applies `FLAG_SECURE` to the window in `main()`. This blocks system-level screenshots and most third-party screen recorders. No additional setup required.
+- **iOS** — `ios/Runner/AppDelegate.swift` ships a Swift listener that posts `screenRecordingChanged` and `screenshotTaken` events on the `app.iraqedu/screen_capture` method channel. The lesson player subscribes via `ScreenProtection.listenIos` and overlays a "stopped during recording" blocker. Apple does **not** expose an API to *block* screenshots — anything that claims it does is fragile or dishonest.
+
+---
+
+## Demo data
+
+While the local stubs are in place:
+
+- **Phone OTP** — any Iraqi mobile in `+9647XXXXXXXX` format. Verification code: **`123456`**.
+- **Course coupons** — `MATH2025`, `PHYSICS2025`, `BIO2025`, `CALC2025`, `MECH2025`, `CELL2025`, `ALL2025` (master).
+- **Study guide coupons** — `G-MATH-2025`, `G-PHYS-2025`, `G-BIO-2025`, `G-MINISTERIAL-2025`, `G-ALL-2025` (master).
+
+The حسابي tab has a "إعادة تعيين" tile that wipes both unlock sets so you can re-test.
 
 ---
 
@@ -94,52 +161,24 @@ flutter run
 
 ### RTL
 
-`MaterialApp.router` is configured with `locale: Locale('ar')` and `supportedLocales: [Locale('ar')]`. A top-level `Directionality(textDirection: TextDirection.rtl)` in the root `builder` forces RTL even if the host platform locale is LTR. All custom layout uses directional primitives (`AlignmentDirectional`, `EdgeInsetsDirectional`, `Icons.chevron_left` for "next", etc.) so flipping LTR later is a single-line change.
+`MaterialApp.router` is configured with `locale: Locale('ar')` and `supportedLocales: [Locale('ar')]`. A top-level `Directionality(textDirection: TextDirection.rtl)` in the root `builder` forces RTL even if the host platform locale is LTR. All custom layout uses directional primitives (`AlignmentDirectional`, `EdgeInsetsDirectional`).
 
 ### Navigation
 
-`buildRouter()` in `lib/core/router/app_router.dart` defines a `StatefulShellRoute.indexedStack` with four branches (Home / Courses / Teachers / Profile). Each branch keeps its own navigation stack — opening a course detail from Home and switching to another tab and back preserves the detail screen.
+`buildRouter()` defines a `StatefulShellRoute.indexedStack` with four branches (الرئيسية / الملازم / المدرسون / حسابي). Each branch keeps its own navigation stack.
 
-Route names are exposed via `AppRoute` constants. Always navigate with named routes, e.g.:
+### Two coupon namespaces
 
-```dart
-context.pushNamed(
-  AppRoute.courseDetails,
-  pathParameters: {'id': course.id},
-);
-```
+Course coupons and study-guide coupons are intentionally kept in **separate stores** so a code from one cannot accidentally unlock the other:
 
-### State management
-
-`flutter_riverpod` is wired at the root via `ProviderScope`. As features come online, providers should live next to their feature (`features/auth/data/auth_repository.dart`, etc.) and expose `AsyncValue` consumers for the UI.
+- Course codes are unprefixed (`MATH2025`).
+- Study-guide codes are `G-` prefixed (`G-MATH-2025`).
+- Two SharedPreferences keys, two repositories, two Riverpod providers.
+- Two Firestore coupon `type`s (`"course"` vs `"guide"`) once Cloud Functions are live.
 
 ### Sample data
 
-`lib/shared/models/sample_data.dart` provides hard-coded teachers/courses so all stub screens render without a backend. Replace these with Firestore-backed repositories as features land — keep the `Teacher` / `Course` / `Lesson` models so the UI doesn't change.
-
----
-
-## Roadmap
-
-The five product features the app is being built toward, in suggested implementation order:
-
-1. **Phone-number authentication (Firebase)**
-   - `verifyPhoneNumber` flow with +964 number entry, OTP entry, and resend
-   - `AuthGate` widget at the root that routes pre/post auth users
-2. **Multi-teacher dashboard**
-   - Firestore `teachers` and `courses` collections
-   - Role claim (`teacher`, `student`, `admin`) on the Firebase user
-   - Teacher-only screens for managing their own courses
-3. **Secure video streaming (Bunny.net)**
-   - Cloud Function that issues short-lived signed URLs scoped to user + course
-   - `video_player` + `chewie` (or `better_player`) for playback
-4. **Coupon system**
-   - Firestore `coupons` collection (`code`, `courseId`, `used`, `usedBy`, `expiresAt`)
-   - Cloud Function for atomic redemption (transaction marks coupon used + grants entitlement)
-5. **Screenshot / recording prevention**
-   - Android: `flutter_windowmanager` `FLAG_SECURE` on sensitive routes (player especially)
-   - iOS: observe `UIScreen.capturedDidChangeNotification` and blur the player while recording; observe `userDidTakeScreenshotNotification` for telemetry
-   - Caveat: iOS has no public API to *block* screenshots — only mitigate
+`lib/shared/models/sample_data.dart` and `lib/features/study_guides/data/study_guides_sample_data.dart` provide hard-coded data so all screens render without a backend. Replace with Firestore-backed repositories as features land — keep the model classes stable so the UI doesn't change.
 
 ---
 
@@ -150,8 +189,6 @@ flutter analyze
 flutter test
 dart format .
 ```
-
-Pre-commit setup is intentionally not added at this stage — once CI is configured, hooks should mirror the same `analyze` + `test` commands.
 
 ---
 

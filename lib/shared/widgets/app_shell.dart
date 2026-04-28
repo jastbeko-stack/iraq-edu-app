@@ -28,9 +28,9 @@ class AppShell extends StatelessWidget {
             label: 'الرئيسية',
           ),
           NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book),
-            label: 'الكورسات',
+            icon: Icon(Icons.collections_bookmark_outlined),
+            selectedIcon: Icon(Icons.collections_bookmark),
+            label: 'الملازم',
           ),
           NavigationDestination(
             icon: Icon(Icons.school_outlined),

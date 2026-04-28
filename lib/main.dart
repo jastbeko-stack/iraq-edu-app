@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/router/app_router.dart';
+import 'core/security/screen_protection.dart';
 import 'core/theme/app_theme.dart';
 import 'features/coupons/data/coupon_repository.dart';
 import 'firebase_options.dart';
@@ -13,6 +14,10 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
+  // Block screenshots/recording on Android (FLAG_SECURE) before the first
+  // frame paints. No-op on web/desktop and on iOS (where Apple does not
+  // expose a "block screenshots" API — see [ScreenProtection]).
+  await ScreenProtection.enableForApp();
   // Resolve SharedPreferences once at boot so synchronous providers can rely
   // on it being available immediately.
   final prefs = await SharedPreferences.getInstance();

@@ -5,13 +5,16 @@ import '../../features/courses/presentation/course_details_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/lessons/presentation/lesson_player_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/study_guides/presentation/study_guide_details_screen.dart';
+import '../../features/study_guides/presentation/study_guides_store_screen.dart';
 import '../../features/teachers/presentation/teacher_profile_screen.dart';
 import '../../shared/widgets/app_shell.dart';
 
 /// Route name constants used throughout the app.
 abstract final class AppRoute {
   static const home = 'home';
-  static const courses = 'courses';
+  static const studyGuides = 'study-guides';
+  static const studyGuideDetails = 'study-guide-details';
   static const teachers = 'teachers';
   static const profile = 'profile';
   static const teacherProfile = 'teacher-profile';
@@ -71,9 +74,18 @@ GoRouter buildRouter() {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/courses',
-                name: AppRoute.courses,
-                builder: (context, state) => const _CoursesTabPlaceholder(),
+                path: '/guides',
+                name: AppRoute.studyGuides,
+                builder: (context, state) => const StudyGuidesStoreScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    name: AppRoute.studyGuideDetails,
+                    builder: (context, state) => StudyGuideDetailsScreen(
+                      guideId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -99,18 +111,6 @@ GoRouter buildRouter() {
       ),
     ],
   );
-}
-
-/// Placeholder screen for the dedicated "Courses" tab (full catalog view).
-///
-/// Replaced in a follow-up task with a paginated list backed by Firestore.
-class _CoursesTabPlaceholder extends StatelessWidget {
-  const _CoursesTabPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _ComingSoonScaffold(title: 'الكورسات');
-  }
 }
 
 /// Placeholder screen for the dedicated "Teachers" tab.

@@ -382,6 +382,77 @@ abstract final class SampleData {
   static List<Course> coursesByTeacher(String teacherId) =>
       courses.where((c) => c.teacherId == teacherId).toList();
 
-  static List<Lesson> lessonsForCourse(String courseId) =>
-      lessonsByCourseId[courseId] ?? const [];
+  /// Public sample MP4 used as the playback URL for every lesson while
+  /// Bunny.net + Cloud Functions are deferred. This is the Flutter team's
+  /// own sample asset (CORS-enabled, served over HTTPS) so it works in
+  /// iOS Safari, Android, and Chrome without a streaming shim.
+  static const _sampleVideoUrl =
+      'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4';
+
+  /// Small public PDF stand-in for lesson worksheets / summaries. Replace
+  /// with Firebase Storage URLs once the backend lands.
+  static const _samplePdfUrl =
+      'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+
+  /// Returns lessons for a course with the demo `previewVideoUrl` and a
+  /// realistic set of attachments attached. Free-preview lessons get a
+  /// lighter attachment set (just a syllabus); the deep-review lesson at
+  /// the end of each course gets a "ministerial pack" PDF bundle.
+  static List<Lesson> lessonsForCourse(String courseId) {
+    final raw = lessonsByCourseId[courseId];
+    if (raw == null) return const [];
+    return [
+      for (final l in raw)
+        Lesson(
+          id: l.id,
+          title: l.title,
+          durationMinutes: l.durationMinutes,
+          isFreePreview: l.isFreePreview,
+          bunnyVideoId: l.bunnyVideoId,
+          previewVideoUrl: l.previewVideoUrl ?? _sampleVideoUrl,
+          attachments: l.attachments.isNotEmpty
+              ? l.attachments
+              : _attachmentsFor(l),
+        ),
+    ];
+  }
+
+  static List<LessonAttachment> _attachmentsFor(Lesson l) {
+    if (l.isFreePreview) {
+      return const [
+        LessonAttachment(
+          id: 'a_syllabus',
+          title: 'منهج الكورس الكامل',
+          url: _samplePdfUrl,
+          kind: AttachmentKind.pdf,
+          sizeBytes: 180 * 1024,
+        ),
+      ];
+    }
+    final isReview = l.title.contains('مراجعة');
+    return [
+      const LessonAttachment(
+        id: 'a_summary',
+        title: 'ملخص الدرس',
+        url: _samplePdfUrl,
+        kind: AttachmentKind.pdf,
+        sizeBytes: 420 * 1024,
+      ),
+      const LessonAttachment(
+        id: 'a_worksheet',
+        title: 'ورقة تمارين',
+        url: _samplePdfUrl,
+        kind: AttachmentKind.worksheet,
+        sizeBytes: 280 * 1024,
+      ),
+      if (isReview)
+        const LessonAttachment(
+          id: 'a_ministerial_pack',
+          title: 'حزمة أسئلة وزارية (٥ سنوات)',
+          url: _samplePdfUrl,
+          kind: AttachmentKind.notes,
+          sizeBytes: 1200 * 1024,
+        ),
+    ];
+  }
 }

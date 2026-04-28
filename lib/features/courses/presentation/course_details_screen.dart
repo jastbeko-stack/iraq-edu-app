@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../shared/models/course.dart';
 import '../../../shared/models/sample_data.dart';
 import '../../coupons/data/coupon_repository.dart';
@@ -100,6 +102,15 @@ class CourseDetailsScreen extends ConsumerWidget {
             Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
+                onTap: (isUnlocked || lesson.isFreePreview)
+                    ? () => context.pushNamed(
+                        AppRoute.lessonPlayer,
+                        pathParameters: {
+                          'id': course.id,
+                          'lessonId': lesson.id,
+                        },
+                      )
+                    : null,
                 leading: CircleAvatar(
                   backgroundColor: theme.colorScheme.primaryContainer,
                   child: Icon(

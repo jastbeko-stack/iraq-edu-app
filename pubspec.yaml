@@ -34,6 +34,9 @@ dependencies:
 
   # Typography
   google_fonts: ^6.2.1
+  chewie: ^1.14.0
+  video_player: ^2.11.1
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

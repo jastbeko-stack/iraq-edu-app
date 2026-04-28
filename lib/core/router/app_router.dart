@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/courses/presentation/course_details_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/lessons/presentation/lesson_player_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/teachers/presentation/teacher_profile_screen.dart';
 import '../../shared/widgets/app_shell.dart';
@@ -15,6 +16,7 @@ abstract final class AppRoute {
   static const profile = 'profile';
   static const teacherProfile = 'teacher-profile';
   static const courseDetails = 'course-details';
+  static const lessonPlayer = 'lesson-player';
 }
 
 /// Builds the [GoRouter] used by [MaterialApp.router].
@@ -51,6 +53,16 @@ GoRouter buildRouter() {
                     builder: (context, state) => CourseDetailsScreen(
                       courseId: state.pathParameters['id']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'lesson/:lessonId',
+                        name: AppRoute.lessonPlayer,
+                        builder: (context, state) => LessonPlayerScreen(
+                          courseId: state.pathParameters['id']!,
+                          lessonId: state.pathParameters['lessonId']!,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

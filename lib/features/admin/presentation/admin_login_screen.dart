@@ -205,10 +205,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                                 _passCtrl.text = AdminCredentials.password;
                                 setState(() => _error = null);
                               },
-                              icon: const Icon(
-                                Icons.auto_fix_high,
-                                size: 18,
-                              ),
+                              icon: const Icon(Icons.auto_fix_high, size: 18),
                               label: const Text('تعبئة البيانات التجريبية'),
                             ),
                           ],

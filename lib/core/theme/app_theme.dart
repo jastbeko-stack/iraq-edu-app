@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
@@ -36,6 +37,19 @@ abstract final class AppTheme {
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
+        // Force the system status bar overlay to match the AppBar so the area
+        // above the AppBar never paints opaque white on iOS / Android.
+        systemOverlayStyle: brightness == Brightness.light
+            ? const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+              )
+            : const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.light,
+                statusBarBrightness: Brightness.dark,
+              ),
         titleTextStyle: GoogleFonts.cairo(
           fontSize: 18,
           fontWeight: FontWeight.w700,

@@ -19,6 +19,18 @@ class Coupon {
 
   /// Human-readable label shown on success.
   final String label;
+
+  Map<String, dynamic> toJson() => {
+    'code': code,
+    'courseIds': courseIds,
+    'label': label,
+  };
+
+  factory Coupon.fromJson(Map<String, dynamic> json) => Coupon(
+    code: json['code'] as String,
+    courseIds: (json['courseIds'] as List<dynamic>).cast<String>(),
+    label: json['label'] as String,
+  );
 }
 
 /// Outcome of a redemption attempt.

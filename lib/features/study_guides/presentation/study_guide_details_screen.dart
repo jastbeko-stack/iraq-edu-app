@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../admin/data/catalog_store.dart';
 import '../data/study_guide_repository.dart';
-import '../data/study_guides_sample_data.dart';
 import 'widgets/study_guide_coupon_sheet.dart';
 
 /// Detail page for a single ملزمة. Shows full description and a primary
@@ -29,7 +29,7 @@ class StudyGuideDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final guide = StudyGuidesData.guideById(guideId);
+    final guide = ref.watch(studyGuideByIdProvider(guideId));
     if (guide == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('ملزمة')),

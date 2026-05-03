@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../admin/data/catalog_store.dart';
+import '../../tracks/data/track_providers.dart';
+import '../../tracks/domain/learning_track.dart';
 import '../data/study_guide_repository.dart';
-import '../data/study_guides_sample_data.dart';
 import '../domain/study_guide.dart';
 import 'widgets/study_guide_coupon_sheet.dart';
 
@@ -12,9 +14,10 @@ import 'widgets/study_guide_coupon_sheet.dart';
 ///
 /// Layout:
 /// - AppBar with a "تفعيل ملزمة" action that opens [StudyGuideCouponSheet]
-/// - Header card summarising what the store is + how many guides are owned
-/// - Subject filter row (الكل / الرياضيات / الفيزياء / الأحياء / مراجعة عامة)
-/// - Vertical list of [_GuideCard]s reactively bound to the unlock state
+/// - Track selector chips (الإعدادية / الهندسية / الطبية) — drives the
+///   [selectedTrackProvider] and is shared with the Home + Teachers tabs
+/// - Subject filter row scoped to the current track's available subjects
+/// - Vertical list of [_GuideCard]s reactively bound to unlock state
 class StudyGuidesStoreScreen extends ConsumerStatefulWidget {
   const StudyGuidesStoreScreen({super.key});
 
@@ -25,24 +28,30 @@ class StudyGuidesStoreScreen extends ConsumerStatefulWidget {
 
 class _StudyGuidesStoreScreenState
     extends ConsumerState<StudyGuidesStoreScreen> {
+  /// 'الكل' means the subject filter is off; otherwise it must match a
+  /// `subject` value on a [StudyGuide] in the current track.
   String _selectedSubject = 'الكل';
-
-  static const _subjects = [
-    'الكل',
-    'الرياضيات',
-    'الفيزياء',
-    'الأحياء',
-    'مراجعة عامة',
-  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final unlocked = ref.watch(unlockedGuidesProvider);
+    final track = ref.watch(selectedTrackProvider);
 
-    final guides = _selectedSubject == 'الكل'
-        ? StudyGuidesData.guides
-        : StudyGuidesData.guidesBySubject(_selectedSubject);
+    final guidesInTrack = track == null
+        ? const <StudyGuide>[]
+        : ref.watch(guidesForTrackProvider(track));
+
+    // Subjects available within this track (deduped, with 'الكل' at the
+    // start so the user can clear the sub-filter).
+    final subjects = <String>[
+      'الكل',
+      ...{for (final g in guidesInTrack) g.subject},
+    ];
+
+    final filtered = _selectedSubject == 'الكل'
+        ? guidesInTrack
+        : guidesInTrack.where((g) => g.subject == _selectedSubject).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -58,43 +67,137 @@ class _StudyGuidesStoreScreenState
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          _StoreHeaderCard(unlockedCount: unlocked.length),
+          _StoreHeaderCard(
+            unlockedCount: unlocked.length,
+            totalGuidesInTrack: guidesInTrack.length,
+            totalAllGuides: ref.watch(studyGuidesProvider).length,
+            track: track,
+          ),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 40,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _subjects.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, i) {
-                final s = _subjects[i];
-                final selected = s == _selectedSubject;
-                return ChoiceChip(
-                  label: Text(s),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _selectedSubject = s),
-                );
-              },
+          _TrackChips(
+            selected: track,
+            onSelected: (t) {
+              ref.read(selectedTrackProvider.notifier).select(t);
+              setState(() => _selectedSubject = 'الكل');
+            },
+          ),
+          if (track == null) ...[
+            const SizedBox(height: 24),
+            _ChooseTrackEmptyState(
+              onChoose: () => context.goNamed(AppRoute.home),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            // Subject sub-filter
+            if (subjects.length > 2)
+              SizedBox(
+                height: 40,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: subjects.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final s = subjects[i];
+                    final selected = s == _selectedSubject;
+                    return ChoiceChip(
+                      label: Text(s),
+                      selected: selected,
+                      onSelected: (_) => setState(() => _selectedSubject = s),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 16),
+            if (filtered.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(
+                  child: Text(
+                    'لا توجد ملازم في هذا الموضوع بعد',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              )
+            else
+              for (final g in filtered) ...[
+                _GuideCard(guide: g),
+                const SizedBox(height: 10),
+              ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TrackChips extends StatelessWidget {
+  const _TrackChips({required this.selected, required this.onSelected});
+
+  final LearningTrack? selected;
+  final ValueChanged<LearningTrack> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: LearningTrack.values.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final t = LearningTrack.values[i];
+          final isSelected = t == selected;
+          return ChoiceChip(
+            avatar: Icon(t.icon, size: 18),
+            label: Text(t.shortLabel),
+            selected: isSelected,
+            onSelected: (_) => onSelected(t),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ChooseTrackEmptyState extends StatelessWidget {
+  const _ChooseTrackEmptyState({required this.onChoose});
+  final VoidCallback onChoose;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Icon(
+            Icons.category_outlined,
+            size: 48,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'اختر القسم أولاً',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'الملازم مرتبة حسب القسم: الإعدادية، الهندسية، الطبية.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 16),
-          if (guides.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Text(
-                  'لا توجد ملازم في هذا الموضوع بعد',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            )
-          else
-            for (final g in guides) ...[
-              _GuideCard(guide: g),
-              const SizedBox(height: 10),
-            ],
+          OutlinedButton.icon(
+            onPressed: onChoose,
+            icon: const Icon(Icons.apps_rounded),
+            label: const Text('انتقل إلى الأقسام'),
+          ),
         ],
       ),
     );
@@ -102,17 +205,31 @@ class _StudyGuidesStoreScreenState
 }
 
 class _StoreHeaderCard extends StatelessWidget {
-  const _StoreHeaderCard({required this.unlockedCount});
+  const _StoreHeaderCard({
+    required this.unlockedCount,
+    required this.totalGuidesInTrack,
+    required this.totalAllGuides,
+    required this.track,
+  });
+
   final int unlockedCount;
+  final int totalGuidesInTrack;
+  final int totalAllGuides;
+  final LearningTrack? track;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final colors = track == null
+        ? [scheme.primary, scheme.tertiary]
+        : track!.gradientColors(scheme);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
+          colors: colors,
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
         ),
@@ -132,11 +249,21 @@ class _StoreHeaderCard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              if (track != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '— ${track!.shortLabel}',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            'ملازم وملخصات وأسئلة وزارية مدفوعة لطلبة السادس العلمي. '
+            'ملازم وملخصات وأسئلة وزارية مدفوعة، مرتبة حسب القسم. '
             'فعّل أي ملزمة بكود يوزّع من المدرس.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.9),
@@ -149,7 +276,9 @@ class _StoreHeaderCard extends StatelessWidget {
               const SizedBox(width: 8),
               _Pill(
                 icon: Icons.collections_bookmark_outlined,
-                label: '${StudyGuidesData.guides.length} ملزمة',
+                label: track == null
+                    ? '$totalAllGuides ملزمة بالمجموع'
+                    : '$totalGuidesInTrack ملزمة في القسم',
               ),
             ],
           ),

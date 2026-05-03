@@ -1,14 +1,17 @@
 import 'course.dart';
 import 'teacher.dart';
 
-/// Realistic 6th Scientific (السادس العلمي) sample data for Math, Physics,
-/// and Biology — the three subjects the user prioritized.
-///
-/// All data is in-memory for the no-backend phase. When Firestore is wired
-/// up, replace these lookups with a repository that exposes the same shapes.
+/// Realistic sample data spanning all three tracks
+/// (preparatory / engineering / medical). All data is in-memory for the
+/// no-backend phase; replace lookups with a Firestore-backed repository
+/// later — keep the model classes stable so the UI doesn't change.
 abstract final class SampleData {
+  static const _kPrep = 'preparatory';
+  static const _kEng = 'engineering';
+  static const _kMed = 'medical';
+
   static const List<Teacher> teachers = [
-    // ─── Math ─────────────────────────────────────────────────────────────
+    // ─── Preparatory: Math ────────────────────────────────────────────────
     Teacher(
       id: 't_ahmed_obeidi',
       name: 'الأستاذ أحمد العبيدي',
@@ -20,6 +23,7 @@ abstract final class SampleData {
           'وزارية متدرجة الصعوبة.',
       coursesCount: 2,
       studentsCount: 1820,
+      trackId: _kPrep,
     ),
     Teacher(
       id: 't_mustafa_bayati',
@@ -31,9 +35,9 @@ abstract final class SampleData {
           'الطلاب.',
       coursesCount: 1,
       studentsCount: 940,
+      trackId: _kPrep,
     ),
-
-    // ─── Physics ──────────────────────────────────────────────────────────
+    // ─── Preparatory: Physics ────────────────────────────────────────────
     Teacher(
       id: 't_layla_kadhimi',
       name: 'الدكتورة ليلى الكاظمي',
@@ -44,6 +48,7 @@ abstract final class SampleData {
           'فهم القوانين قبل حفظها.',
       coursesCount: 1,
       studentsCount: 1340,
+      trackId: _kPrep,
     ),
     Teacher(
       id: 't_haider_mousawi',
@@ -55,19 +60,20 @@ abstract final class SampleData {
           'كورساته.',
       coursesCount: 2,
       studentsCount: 1520,
+      trackId: _kPrep,
     ),
-
-    // ─── Biology ──────────────────────────────────────────────────────────
+    // ─── Preparatory: Biology ────────────────────────────────────────────
     Teacher(
       id: 't_karrar_zubaidi',
       name: 'الدكتور كرار الزبيدي',
       subject: 'علم الأحياء',
       bio:
           'دكتوراه في علم الخلية والوراثة من جامعة بغداد. يبسط المفاهيم '
-          'المعقدة باستخدام الرسومات والمخططات، ويركز على الاسئلة الوزارية '
+          'المعقدة باستخدام الرسومات والمخططات، ويركز على الأسئلة الوزارية '
           'وأسئلة المراجعة المركزة.',
       coursesCount: 1,
       studentsCount: 1100,
+      trackId: _kPrep,
     ),
     Teacher(
       id: 't_noor_shamri',
@@ -78,11 +84,105 @@ abstract final class SampleData {
           'سنوات في تدريس السادس العلمي وإعداد الطلاب لامتحان البكلوريا.',
       coursesCount: 1,
       studentsCount: 870,
+      trackId: _kPrep,
+    ),
+
+    // ─── Engineering ────────────────────────────────────────────────────
+    Teacher(
+      id: 't_eng_ali_jubouri',
+      name: 'الدكتور علي الجبوري',
+      subject: 'الرياضيات الهندسية',
+      bio:
+          'أستاذ مساعد في الجامعة التكنولوجية. متخصص في التحليل الرياضي، '
+          'المعادلات التفاضلية، والجبر الخطي لطلاب المرحلة الأولى '
+          'الهندسية.',
+      coursesCount: 2,
+      studentsCount: 980,
+      trackId: _kEng,
+    ),
+    Teacher(
+      id: 't_eng_zahraa_anbari',
+      name: 'الدكتورة زهراء العنبري',
+      subject: 'الميكانيك التطبيقي',
+      bio:
+          'دكتوراه في الهندسة الميكانيكية من جامعة بغداد، تركّز على '
+          'الستاتيك والديناميك لطلاب الهندسة المدنية والميكانيكية.',
+      coursesCount: 1,
+      studentsCount: 640,
+      trackId: _kEng,
+    ),
+    Teacher(
+      id: 't_eng_omar_najjar',
+      name: 'المهندس عمر النجار',
+      subject: 'الدوائر الكهربائية',
+      bio:
+          'مهندس كهرباء وأستاذ في كلية الهندسة — قسم الإلكترونيات. خبرته '
+          '12 سنة في تدريس الدوائر الكهربائية والإلكترونيات الرقمية.',
+      coursesCount: 2,
+      studentsCount: 720,
+      trackId: _kEng,
+    ),
+    Teacher(
+      id: 't_eng_yasin_dulaimi',
+      name: 'الدكتور ياسين الدليمي',
+      subject: 'البرمجة الهندسية',
+      bio:
+          'أستاذ في كلية الهندسة قسم الحاسبات. يدرّس مقدمة البرمجة، C++، '
+          'وأساسيات هياكل البيانات لطلاب السنة الأولى.',
+      coursesCount: 1,
+      studentsCount: 560,
+      trackId: _kEng,
+    ),
+
+    // ─── Medical ────────────────────────────────────────────────────────
+    Teacher(
+      id: 't_med_hassan_tamimi',
+      name: 'الدكتور حسن التميمي',
+      subject: 'علم التشريح',
+      bio:
+          'دكتوراه في التشريح من كلية الطب بجامعة بغداد. خبرة 16 سنة في '
+          'تدريس Gross Anatomy و Histology لطلاب المرحلة الأولى الطب.',
+      coursesCount: 2,
+      studentsCount: 1240,
+      trackId: _kMed,
+    ),
+    Teacher(
+      id: 't_med_rasha_qaisi',
+      name: 'الدكتورة رشا القيسي',
+      subject: 'الفسلجة الطبية',
+      bio:
+          'استشارية فسلجة طبية وأستاذة مساعدة. تربط الفسلجة بالحالات '
+          'الإكلينيكية كي يفهم الطالب الوظيفة قبل الحفظ.',
+      coursesCount: 1,
+      studentsCount: 980,
+      trackId: _kMed,
+    ),
+    Teacher(
+      id: 't_med_yousif_saadi',
+      name: 'الدكتور يوسف السعدي',
+      subject: 'الكيمياء الحيوية',
+      bio:
+          'متخصص في Biochemistry لطلاب الطب وطب الأسنان. ركّز على '
+          'الـ metabolic pathways و clinical correlations.',
+      coursesCount: 1,
+      studentsCount: 720,
+      trackId: _kMed,
+    ),
+    Teacher(
+      id: 't_med_dina_hashimi',
+      name: 'الدكتورة دينا الهاشمي',
+      subject: 'علم الأدوية',
+      bio:
+          'أستاذة في كلية الصيدلة، متخصصة في Pharmacology و Toxicology. '
+          'تستعمل أمثلة دوائية حقيقية في كل محاضرة.',
+      coursesCount: 1,
+      studentsCount: 540,
+      trackId: _kMed,
     ),
   ];
 
   static const List<Course> courses = [
-    // ─── Math ─────────────────────────────────────────────────────────────
+    // ─── Preparatory: Math ────────────────────────────────────────────────
     Course(
       id: 'c_calculus',
       title: 'التفاضل والتكامل — السادس العلمي',
@@ -91,6 +191,7 @@ abstract final class SampleData {
       subject: 'الرياضيات',
       lessonsCount: 24,
       isLocked: true,
+      trackId: _kPrep,
       description:
           'كورس شامل يغطي فصول النهايات والاتصال، المشتقة وتطبيقاتها، '
           'التكامل المحدد وغير المحدد، وتطبيقات التكامل. يتضمن حل '
@@ -104,6 +205,7 @@ abstract final class SampleData {
       subject: 'الرياضيات',
       lessonsCount: 18,
       isLocked: true,
+      trackId: _kPrep,
       description:
           'مراجعة سريعة لأساسيات الجبر مع التركيز على الأقسام التي تظهر '
           'في الامتحان الوزاري: الاقترانات، المتباينات، اللوغاريتمات.',
@@ -116,12 +218,12 @@ abstract final class SampleData {
       subject: 'الرياضيات',
       lessonsCount: 14,
       isLocked: true,
+      trackId: _kPrep,
       description:
           'يغطي مفاهيم الاحتمال، التوزيعات، الإحصاء الوصفي، ومقاييس '
           'النزعة المركزية والتشتت، مع تطبيقات على بيانات حقيقية.',
     ),
-
-    // ─── Physics ──────────────────────────────────────────────────────────
+    // ─── Preparatory: Physics ────────────────────────────────────────────
     Course(
       id: 'c_mechanics',
       title: 'الميكانيك الكلاسيكي',
@@ -130,6 +232,7 @@ abstract final class SampleData {
       subject: 'الفيزياء',
       lessonsCount: 20,
       isLocked: true,
+      trackId: _kPrep,
       description:
           'يبدأ بقوانين نيوتن وينتهي بالحركة الدورانية والهزاز التوافقي '
           'البسيط. كل درس يحتوي على أمثلة محلولة وأسئلة وزارية ومراجعة.',
@@ -142,6 +245,7 @@ abstract final class SampleData {
       subject: 'الفيزياء',
       lessonsCount: 22,
       isLocked: true,
+      trackId: _kPrep,
       description:
           'فصول الكهربائية الساكنة، التيار الكهربائي، الدوائر الكهربائية، '
           'المجال المغناطيسي، والحث الكهرومغناطيسي. مع شرح مفصل لأسئلة '
@@ -155,12 +259,12 @@ abstract final class SampleData {
       subject: 'الفيزياء',
       lessonsCount: 16,
       isLocked: false,
+      trackId: _kPrep,
       description:
           'مدخل إلى الحركة الموجية، الموجات الميكانيكية، الموجات الصوتية، '
           'وخصائص الضوء. مع تطبيقات على الظواهر اليومية.',
     ),
-
-    // ─── Biology ──────────────────────────────────────────────────────────
+    // ─── Preparatory: Biology ────────────────────────────────────────────
     Course(
       id: 'c_cell_biology',
       title: 'علم الخلية والوراثة',
@@ -169,6 +273,7 @@ abstract final class SampleData {
       subject: 'علم الأحياء',
       lessonsCount: 19,
       isLocked: true,
+      trackId: _kPrep,
       description:
           'يغطي تركيب الخلية وعضياتها، الانقسام الخلوي بنوعيه، علم '
           'الوراثة المندلية، الـ DNA و RNA، والهندسة الوراثية. يتضمن '
@@ -182,9 +287,157 @@ abstract final class SampleData {
       subject: 'علم الأحياء',
       lessonsCount: 17,
       isLocked: true,
+      trackId: _kPrep,
       description:
           'الجهاز الهضمي، الدوري، التنفسي، البولي، العصبي، والتناسلي. '
           'شرح مفصل بالرسومات مع التركيز على الأسئلة الوزارية المتكررة.',
+    ),
+
+    // ─── Engineering ────────────────────────────────────────────────────
+    Course(
+      id: 'c_eng_math1',
+      title: 'الرياضيات الهندسية I — التحليل والمصفوفات',
+      teacherId: 't_eng_ali_jubouri',
+      teacherName: 'الدكتور علي الجبوري',
+      subject: 'الرياضيات الهندسية',
+      lessonsCount: 22,
+      isLocked: true,
+      trackId: _kEng,
+      description:
+          'يغطي النهايات والاتصال، المشتقات الجزئية، المصفوفات والمحددات، '
+          'الفضاءات المتجهة، وتطبيقاتها في المسائل الهندسية.',
+    ),
+    Course(
+      id: 'c_eng_diff_eq',
+      title: 'المعادلات التفاضلية للهندسة',
+      teacherId: 't_eng_ali_jubouri',
+      teacherName: 'الدكتور علي الجبوري',
+      subject: 'الرياضيات الهندسية',
+      lessonsCount: 16,
+      isLocked: true,
+      trackId: _kEng,
+      description:
+          'المعادلات التفاضلية من الدرجة الأولى والثانية، المعادلات '
+          'الخطية، تحويل لابلاس، وتطبيقاتها في الدوائر والميكانيك.',
+    ),
+    Course(
+      id: 'c_eng_statics',
+      title: 'الستاتيك (الميكانيك الهندسي I)',
+      teacherId: 't_eng_zahraa_anbari',
+      teacherName: 'الدكتورة زهراء العنبري',
+      subject: 'الميكانيك التطبيقي',
+      lessonsCount: 18,
+      isLocked: false,
+      trackId: _kEng,
+      description:
+          'الاتزان، تحليل الجمالونات (Trusses)، الإطارات، الاحتكاك، '
+          'ومركز الكتلة. مع مسائل تطبيقية من امتحانات الهندسة المدنية.',
+    ),
+    Course(
+      id: 'c_eng_circuits',
+      title: 'الدوائر الكهربائية I',
+      teacherId: 't_eng_omar_najjar',
+      teacherName: 'المهندس عمر النجار',
+      subject: 'الدوائر الكهربائية',
+      lessonsCount: 20,
+      isLocked: true,
+      trackId: _kEng,
+      description:
+          'قوانين كيرشوف، تحليل العقد والحلقات، المحولات، الدوائر '
+          'الزمنية (RC و RL)، والتيار المتناوب AC.',
+    ),
+    Course(
+      id: 'c_eng_electronics',
+      title: 'الإلكترونيات الرقمية الأساسية',
+      teacherId: 't_eng_omar_najjar',
+      teacherName: 'المهندس عمر النجار',
+      subject: 'الدوائر الكهربائية',
+      lessonsCount: 14,
+      isLocked: true,
+      trackId: _kEng,
+      description:
+          'البوابات المنطقية، المعادلات البولية، خرائط كارنوف، '
+          'الـ Flip-Flops، والمسجلات (Registers). شرح مع محاكاة عملية.',
+    ),
+    Course(
+      id: 'c_eng_cpp',
+      title: 'مقدمة البرمجة بلغة C++',
+      teacherId: 't_eng_yasin_dulaimi',
+      teacherName: 'الدكتور ياسين الدليمي',
+      subject: 'البرمجة الهندسية',
+      lessonsCount: 24,
+      isLocked: true,
+      trackId: _kEng,
+      description:
+          'من المتغيرات والشروط حتى المؤشرات، البرمجة الكائنية، '
+          'وهياكل البيانات الأساسية. مع تمارين عملية لكل محاضرة.',
+    ),
+
+    // ─── Medical ────────────────────────────────────────────────────────
+    Course(
+      id: 'c_med_anatomy_upper',
+      title: 'تشريح الأطراف العلوية (Upper Limb)',
+      teacherId: 't_med_hassan_tamimi',
+      teacherName: 'الدكتور حسن التميمي',
+      subject: 'علم التشريح',
+      lessonsCount: 18,
+      isLocked: true,
+      trackId: _kMed,
+      description:
+          'العظام، العضلات، الأعصاب، والأوعية الدموية للطرف العلوي. '
+          'مدعوم بصور تشريحية ومسائل إكلينيكية.',
+    ),
+    Course(
+      id: 'c_med_anatomy_lower',
+      title: 'تشريح الأطراف السفلية (Lower Limb)',
+      teacherId: 't_med_hassan_tamimi',
+      teacherName: 'الدكتور حسن التميمي',
+      subject: 'علم التشريح',
+      lessonsCount: 16,
+      isLocked: false,
+      trackId: _kMed,
+      description:
+          'تشريح مفصل للحوض، الفخذ، الركبة، الساق، والقدم. مع تطبيقات '
+          'سريرية على الإصابات الشائعة.',
+    ),
+    Course(
+      id: 'c_med_physiology',
+      title: 'الفسلجة الطبية — الجهاز القلبي الوعائي',
+      teacherId: 't_med_rasha_qaisi',
+      teacherName: 'الدكتورة رشا القيسي',
+      subject: 'الفسلجة الطبية',
+      lessonsCount: 20,
+      isLocked: true,
+      trackId: _kMed,
+      description:
+          'فسلجة القلب، التحكم العصبي والهرموني، تخطيط القلب الـ ECG، '
+          'وضغط الدم. مع ربط الفسلجة بالحالات المرضية الشائعة.',
+    ),
+    Course(
+      id: 'c_med_biochem',
+      title: 'الكيمياء الحيوية — أيض الكاربوهيدرات والدهون',
+      teacherId: 't_med_yousif_saadi',
+      teacherName: 'الدكتور يوسف السعدي',
+      subject: 'الكيمياء الحيوية',
+      lessonsCount: 17,
+      isLocked: true,
+      trackId: _kMed,
+      description:
+          'الـ Glycolysis، دورة كريبس، أيض الدهون، وتنظيم سكر الدم. '
+          'مدعوم بتطبيقات إكلينيكية على السكري وأمراض الأيض.',
+    ),
+    Course(
+      id: 'c_med_pharma',
+      title: 'علم الأدوية العام',
+      teacherId: 't_med_dina_hashimi',
+      teacherName: 'الدكتورة دينا الهاشمي',
+      subject: 'علم الأدوية',
+      lessonsCount: 15,
+      isLocked: true,
+      trackId: _kMed,
+      description:
+          'الـ Pharmacokinetics و Pharmacodynamics، الجرعات الدوائية، '
+          'التداخلات، والأعراض الجانبية. مع أمثلة لأشهر الأدوية.',
     ),
   ];
 
@@ -224,7 +477,6 @@ abstract final class SampleData {
       ),
       Lesson(id: 'l8', title: 'مراجعة الأسئلة الوزارية', durationMinutes: 45),
     ],
-    // Algebra
     'c_algebra': [
       Lesson(
         id: 'l1',
@@ -241,7 +493,6 @@ abstract final class SampleData {
       Lesson(id: 'l4', title: 'الأسس واللوغاريتمات', durationMinutes: 28),
       Lesson(id: 'l5', title: 'حل الأسئلة الوزارية', durationMinutes: 35),
     ],
-    // Probability
     'c_probability': [
       Lesson(
         id: 'l1',
@@ -262,7 +513,6 @@ abstract final class SampleData {
         durationMinutes: 22,
       ),
     ],
-    // Mechanics
     'c_mechanics': [
       Lesson(
         id: 'l1',
@@ -277,7 +527,6 @@ abstract final class SampleData {
       Lesson(id: 'l6', title: 'الهزاز التوافقي البسيط', durationMinutes: 24),
       Lesson(id: 'l7', title: 'مراجعة وزاريات الميكانيك', durationMinutes: 40),
     ],
-    // Electricity
     'c_electricity': [
       Lesson(
         id: 'l1',
@@ -304,7 +553,6 @@ abstract final class SampleData {
       Lesson(id: 'l6', title: 'المجال المغناطيسي', durationMinutes: 26),
       Lesson(id: 'l7', title: 'الحث الكهرومغناطيسي', durationMinutes: 28),
     ],
-    // Waves
     'c_waves': [
       Lesson(
         id: 'l1',
@@ -325,7 +573,6 @@ abstract final class SampleData {
       Lesson(id: 'l4', title: 'انعكاس الضوء وانكساره', durationMinutes: 22),
       Lesson(id: 'l5', title: 'تداخل الضوء وحيود الضوء', durationMinutes: 28),
     ],
-    // Cell Biology
     'c_cell_biology': [
       Lesson(
         id: 'l1',
@@ -348,7 +595,6 @@ abstract final class SampleData {
         durationMinutes: 26,
       ),
     ],
-    // Human Physiology
     'c_human_physiology': [
       Lesson(
         id: 'l1',
@@ -362,6 +608,175 @@ abstract final class SampleData {
       Lesson(id: 'l5', title: 'الجهاز البولي', durationMinutes: 20),
       Lesson(id: 'l6', title: 'الجهاز العصبي والحواس', durationMinutes: 30),
       Lesson(id: 'l7', title: 'الجهاز التناسلي', durationMinutes: 24),
+    ],
+
+    // ─── Engineering lesson plans ──────────────────────────────────────
+    'c_eng_math1': [
+      Lesson(
+        id: 'l1',
+        title: 'تقديم الكورس وخطة الفصل',
+        durationMinutes: 9,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'النهايات والاتصال', durationMinutes: 28),
+      Lesson(id: 'l3', title: 'المشتقات الجزئية', durationMinutes: 26),
+      Lesson(id: 'l4', title: 'المصفوفات والمحددات', durationMinutes: 30),
+      Lesson(
+        id: 'l5',
+        title: 'الفضاءات المتجهة والاستقلال الخطي',
+        durationMinutes: 24,
+      ),
+      Lesson(id: 'l6', title: 'مراجعة وحلول مسائل', durationMinutes: 36),
+    ],
+    'c_eng_diff_eq': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة المعادلات التفاضلية',
+        durationMinutes: 10,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'معادلات الدرجة الأولى', durationMinutes: 24),
+      Lesson(
+        id: 'l3',
+        title: 'معادلات الدرجة الثانية الخطية',
+        durationMinutes: 28,
+      ),
+      Lesson(id: 'l4', title: 'تحويل لابلاس', durationMinutes: 32),
+      Lesson(
+        id: 'l5',
+        title: 'تطبيقات في الدوائر والميكانيك',
+        durationMinutes: 26,
+      ),
+    ],
+    'c_eng_statics': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة الستاتيك ومفهوم الاتزان',
+        durationMinutes: 11,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'القوى المركبة والمحصلة', durationMinutes: 24),
+      Lesson(id: 'l3', title: 'الاتزان في 2D و 3D', durationMinutes: 28),
+      Lesson(
+        id: 'l4',
+        title: 'تحليل الجمالونات (Trusses)',
+        durationMinutes: 30,
+      ),
+      Lesson(id: 'l5', title: 'الاحتكاك ومركز الكتلة', durationMinutes: 26),
+    ],
+    'c_eng_circuits': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة الدوائر — العناصر الأساسية',
+        durationMinutes: 10,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'قوانين كيرشوف', durationMinutes: 26),
+      Lesson(id: 'l3', title: 'تحليل العقد والحلقات', durationMinutes: 30),
+      Lesson(id: 'l4', title: 'الدوائر الزمنية RC و RL', durationMinutes: 28),
+      Lesson(id: 'l5', title: 'التيار المتناوب AC', durationMinutes: 32),
+      Lesson(id: 'l6', title: 'مراجعة وزاريات هندسة', durationMinutes: 38),
+    ],
+    'c_eng_electronics': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة الإلكترونيات الرقمية',
+        durationMinutes: 9,
+        isFreePreview: true,
+      ),
+      Lesson(
+        id: 'l2',
+        title: 'البوابات المنطقية الأساسية',
+        durationMinutes: 24,
+      ),
+      Lesson(
+        id: 'l3',
+        title: 'الجبر البولي وخرائط كارنوف',
+        durationMinutes: 28,
+      ),
+      Lesson(id: 'l4', title: 'الـ Flip-Flops والمسجلات', durationMinutes: 26),
+    ],
+    'c_eng_cpp': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة الكورس — Hello, C++',
+        durationMinutes: 8,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'المتغيرات والشروط', durationMinutes: 22),
+      Lesson(id: 'l3', title: 'الحلقات والدوال', durationMinutes: 24),
+      Lesson(id: 'l4', title: 'المؤشرات والمصفوفات', durationMinutes: 28),
+      Lesson(id: 'l5', title: 'البرمجة الكائنية OOP', durationMinutes: 30),
+      Lesson(id: 'l6', title: 'هياكل البيانات الأساسية', durationMinutes: 26),
+    ],
+
+    // ─── Medical lesson plans ──────────────────────────────────────────
+    'c_med_anatomy_upper': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة تشريح الطرف العلوي',
+        durationMinutes: 10,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'عظام وعضلات الكتف', durationMinutes: 28),
+      Lesson(id: 'l3', title: 'العضد والساعد', durationMinutes: 26),
+      Lesson(id: 'l4', title: 'أعصاب الضفيرة العضدية', durationMinutes: 30),
+      Lesson(id: 'l5', title: 'تشريح اليد والأصابع', durationMinutes: 24),
+      Lesson(id: 'l6', title: 'مراجعة بصور إكلينيكية', durationMinutes: 35),
+    ],
+    'c_med_anatomy_lower': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة الطرف السفلي',
+        durationMinutes: 9,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'الحوض والفخذ', durationMinutes: 26),
+      Lesson(id: 'l3', title: 'الركبة والساق', durationMinutes: 28),
+      Lesson(id: 'l4', title: 'القدم والأقواس', durationMinutes: 22),
+    ],
+    'c_med_physiology': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة فسلجة القلب',
+        durationMinutes: 11,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'دورة القلب والـ ECG', durationMinutes: 28),
+      Lesson(id: 'l3', title: 'النظم القلبي', durationMinutes: 24),
+      Lesson(id: 'l4', title: 'تنظيم ضغط الدم', durationMinutes: 26),
+      Lesson(
+        id: 'l5',
+        title: 'فشل القلب — تطبيقات سريرية',
+        durationMinutes: 30,
+      ),
+    ],
+    'c_med_biochem': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة الكيمياء الحيوية',
+        durationMinutes: 10,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'تحلل السكر Glycolysis', durationMinutes: 26),
+      Lesson(id: 'l3', title: 'دورة كريبس', durationMinutes: 24),
+      Lesson(id: 'l4', title: 'أيض الدهون', durationMinutes: 28),
+      Lesson(id: 'l5', title: 'تنظيم سكر الدم والسكري', durationMinutes: 24),
+    ],
+    'c_med_pharma': [
+      Lesson(
+        id: 'l1',
+        title: 'مقدمة علم الأدوية',
+        durationMinutes: 9,
+        isFreePreview: true,
+      ),
+      Lesson(id: 'l2', title: 'الـ Pharmacokinetics', durationMinutes: 26),
+      Lesson(id: 'l3', title: 'الـ Pharmacodynamics', durationMinutes: 24),
+      Lesson(
+        id: 'l4',
+        title: 'التداخلات والآثار الجانبية',
+        durationMinutes: 22,
+      ),
     ],
   };
 
@@ -450,8 +865,8 @@ abstract final class SampleData {
           id: 'a_ministerial_pack',
           title: 'حزمة أسئلة وزارية (٥ سنوات)',
           url: _samplePdfUrl,
-          kind: AttachmentKind.notes,
-          sizeBytes: 1200 * 1024,
+          kind: AttachmentKind.pdf,
+          sizeBytes: 1_400 * 1024,
         ),
     ];
   }

@@ -11,6 +11,7 @@ class Course {
     required this.subject,
     required this.lessonsCount,
     required this.isLocked,
+    required this.trackId,
     this.coverUrl,
     this.description = '',
   });
@@ -22,8 +23,59 @@ class Course {
   final String subject;
   final int lessonsCount;
   final bool isLocked;
+  final String trackId;
   final String? coverUrl;
   final String description;
+
+  Course copyWith({
+    String? id,
+    String? title,
+    String? teacherId,
+    String? teacherName,
+    String? subject,
+    int? lessonsCount,
+    bool? isLocked,
+    String? trackId,
+    String? coverUrl,
+    String? description,
+  }) => Course(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    teacherId: teacherId ?? this.teacherId,
+    teacherName: teacherName ?? this.teacherName,
+    subject: subject ?? this.subject,
+    lessonsCount: lessonsCount ?? this.lessonsCount,
+    isLocked: isLocked ?? this.isLocked,
+    trackId: trackId ?? this.trackId,
+    coverUrl: coverUrl ?? this.coverUrl,
+    description: description ?? this.description,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'teacherId': teacherId,
+    'teacherName': teacherName,
+    'subject': subject,
+    'lessonsCount': lessonsCount,
+    'isLocked': isLocked,
+    'trackId': trackId,
+    'coverUrl': coverUrl,
+    'description': description,
+  };
+
+  factory Course.fromJson(Map<String, dynamic> json) => Course(
+    id: json['id'] as String,
+    title: json['title'] as String,
+    teacherId: json['teacherId'] as String,
+    teacherName: json['teacherName'] as String,
+    subject: json['subject'] as String,
+    lessonsCount: json['lessonsCount'] as int,
+    isLocked: json['isLocked'] as bool,
+    trackId: json['trackId'] as String,
+    coverUrl: json['coverUrl'] as String?,
+    description: (json['description'] as String?) ?? '',
+  );
 }
 
 /// A single lesson inside a course.

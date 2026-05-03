@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../auth/data/auth_controller.dart';
 import '../../auth/domain/auth_state.dart';
 import '../../auth/presentation/login_screen.dart';
@@ -116,6 +118,36 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const _SettingsTile(icon: Icons.info_outline, title: 'عن التطبيق'),
           const _SettingsTile(icon: Icons.support_agent, title: 'الدعم الفني'),
+          const SizedBox(height: 16),
+          Card(
+            color: theme.colorScheme.primaryContainer,
+            child: ListTile(
+              leading: Icon(
+                Icons.admin_panel_settings,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+              title: Text(
+                'البوابة الإدارية',
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              subtitle: Text(
+                'إدارة المدرسين، الكورسات، الملازم، والكوبونات',
+                style: TextStyle(
+                  color: theme.colorScheme.onPrimaryContainer.withValues(
+                    alpha: 0.8,
+                  ),
+                ),
+              ),
+              trailing: Icon(
+                Icons.chevron_left,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
+              onTap: () => context.goNamed(AppRoute.adminLogin),
+            ),
+          ),
         ],
       ),
     );

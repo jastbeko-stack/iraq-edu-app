@@ -1,4 +1,4 @@
-# منصة العراق التعليمية — Iraq Edu App
+# منصة المهندس التعليمية — Iraq Edu App
 
 A Flutter mobile application for an Iraqi educational platform targeting **6th Grade Scientific** high school students. Arabic-first, fully RTL.
 

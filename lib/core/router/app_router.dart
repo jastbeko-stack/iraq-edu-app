@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/data/admin_auth.dart';
+import '../../features/admin/presentation/admin_dashboard_screen.dart';
+import '../../features/admin/presentation/admin_login_screen.dart';
 import '../../features/courses/presentation/course_details_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/lessons/presentation/lesson_player_screen.dart';
@@ -8,6 +12,7 @@ import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/study_guides/presentation/study_guide_details_screen.dart';
 import '../../features/study_guides/presentation/study_guides_store_screen.dart';
 import '../../features/teachers/presentation/teacher_profile_screen.dart';
+import '../../features/teachers/presentation/teachers_list_screen.dart';
 import '../../shared/widgets/app_shell.dart';
 
 /// Route name constants used throughout the app.
@@ -18,8 +23,11 @@ abstract final class AppRoute {
   static const teachers = 'teachers';
   static const profile = 'profile';
   static const teacherProfile = 'teacher-profile';
+  static const teacherProfileFromTab = 'teacher-profile-from-tab';
   static const courseDetails = 'course-details';
   static const lessonPlayer = 'lesson-player';
+  static const adminLogin = 'admin-login';
+  static const adminDashboard = 'admin-dashboard';
 }
 
 /// Builds the [GoRouter] used by [MaterialApp.router].
@@ -28,10 +36,30 @@ abstract final class AppRoute {
 /// which gives each tab its own navigation stack. Detail screens (teacher
 /// profile, course details) are pushed on top of the active tab stack so the
 /// shell remains visible only on top-level routes.
-GoRouter buildRouter() {
+final routerProvider = Provider<GoRouter>(buildRouter);
+
+GoRouter buildRouter(Ref ref) {
   return GoRouter(
     initialLocation: '/',
+    redirect: (context, state) {
+      final loc = state.matchedLocation;
+      final isAdminLoggedIn = ref.read(adminAuthProvider);
+      final goingToAdmin = loc.startsWith('/admin') && loc != '/admin/login';
+      if (goingToAdmin && !isAdminLoggedIn) return '/admin/login';
+      if (loc == '/admin/login' && isAdminLoggedIn) return '/admin';
+      return null;
+    },
     routes: [
+      GoRoute(
+        path: '/admin/login',
+        name: AppRoute.adminLogin,
+        builder: (context, state) => const AdminLoginScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        name: AppRoute.adminDashboard,
+        builder: (context, state) => const AdminDashboardScreen(),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -94,7 +122,16 @@ GoRouter buildRouter() {
               GoRoute(
                 path: '/teachers',
                 name: AppRoute.teachers,
-                builder: (context, state) => const _TeachersTabPlaceholder(),
+                builder: (context, state) => const TeachersListScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    name: AppRoute.teacherProfileFromTab,
+                    builder: (context, state) => TeacherProfileScreen(
+                      teacherId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -111,28 +148,4 @@ GoRouter buildRouter() {
       ),
     ],
   );
-}
-
-/// Placeholder screen for the dedicated "Teachers" tab.
-class _TeachersTabPlaceholder extends StatelessWidget {
-  const _TeachersTabPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _ComingSoonScaffold(title: 'المدرسون');
-  }
-}
-
-class _ComingSoonScaffold extends StatelessWidget {
-  const _ComingSoonScaffold({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: const Center(child: Text('قريباً')),
-    );
-  }
 }

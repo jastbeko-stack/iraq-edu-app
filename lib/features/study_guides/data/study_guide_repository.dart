@@ -1,20 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../admin/data/catalog_store.dart';
 import '../../coupons/data/coupon_repository.dart'
     show sharedPreferencesProvider;
 import '../domain/study_guide.dart';
-import '../domain/study_guide_codes.dart';
 
 /// SharedPreferences key for the JSON-encoded list of unlocked study-guide
 /// ids. Intentionally separate from `unlocked_courses_v1` so the two
 /// stores never bleed into each other.
 const _kUnlockedGuidesKey = 'unlocked_guides_v1';
 
-/// Local-only persistence of which study guides the current user has
-/// unlocked. Same shape as [CouponRepository] but for the guides store —
-/// kept parallel rather than generic so each store can evolve
-/// independently (e.g. guides may add a "preview pages" entitlement).
 class StudyGuideCouponRepository {
   StudyGuideCouponRepository(this._prefs);
 
@@ -28,10 +24,7 @@ class StudyGuideCouponRepository {
   Future<void> _save(Set<String> unlocked) =>
       _prefs.setStringList(_kUnlockedGuidesKey, unlocked.toList());
 
-  Future<StudyGuideRedemptionResult> redeem(String code) async {
-    final coupon = StudyGuideCodes.lookup(code);
-    if (coupon == null) return const StudyGuideRedemptionInvalid();
-
+  Future<StudyGuideRedemptionResult> apply(StudyGuideCoupon coupon) async {
     final current = loadUnlockedGuideIds();
     final newlyUnlocked = coupon.guideIds
         .where((id) => !current.contains(id))
@@ -57,15 +50,18 @@ final studyGuideCouponRepositoryProvider = Provider<StudyGuideCouponRepository>(
 );
 
 class UnlockedGuidesNotifier extends StateNotifier<Set<String>> {
-  UnlockedGuidesNotifier(this._repository)
+  UnlockedGuidesNotifier(this._ref, this._repository)
     : super(_repository.loadUnlockedGuideIds());
 
+  final Ref _ref;
   final StudyGuideCouponRepository _repository;
 
   void refresh() => state = _repository.loadUnlockedGuideIds();
 
   Future<StudyGuideRedemptionResult> redeem(String code) async {
-    final result = await _repository.redeem(code);
+    final coupon = _ref.read(guideCouponsProvider.notifier).lookup(code);
+    if (coupon == null) return const StudyGuideRedemptionInvalid();
+    final result = await _repository.apply(coupon);
     if (result is StudyGuideRedemptionSuccess) refresh();
     return result;
   }
@@ -79,7 +75,7 @@ class UnlockedGuidesNotifier extends StateNotifier<Set<String>> {
 final unlockedGuidesProvider =
     StateNotifierProvider<UnlockedGuidesNotifier, Set<String>>((ref) {
       final repo = ref.watch(studyGuideCouponRepositoryProvider);
-      return UnlockedGuidesNotifier(repo);
+      return UnlockedGuidesNotifier(ref, repo);
     });
 
 final isGuideUnlockedProvider = Provider.family<bool, String>((ref, guideId) {

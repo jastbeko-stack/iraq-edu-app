@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/models/course.dart';
 import '../../../shared/models/sample_data.dart';
+import '../../admin/data/catalog_store.dart';
 import '../../coupons/data/coupon_repository.dart';
 import '../../coupons/presentation/coupon_redemption_sheet.dart';
 
@@ -21,7 +22,7 @@ class CourseDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final course = SampleData.courseById(courseId);
+    final course = ref.watch(courseByIdProvider(courseId));
     final theme = Theme.of(context);
 
     if (course == null) {

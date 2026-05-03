@@ -1,11 +1,13 @@
 {
-    "name": "iraq_edu_app",
-    "short_name": "iraq_edu_app",
+    "name": "منصة المهندس التعليمية",
+    "short_name": "منصة المهندس",
+    "lang": "ar",
+    "dir": "rtl",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "منصة المهندس التعليمية — منصة تعليمية للطلاب في العراق.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

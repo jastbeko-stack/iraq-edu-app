@@ -49,20 +49,20 @@ Future<void> _initializeFirebase() async {
 
 /// Root widget. Configures Arabic-only localization, the Material 3 theme,
 /// and the [GoRouter] navigation graph.
-class IraqEduApp extends StatefulWidget {
+class IraqEduApp extends ConsumerStatefulWidget {
   const IraqEduApp({super.key});
 
   @override
-  State<IraqEduApp> createState() => _IraqEduAppState();
+  ConsumerState<IraqEduApp> createState() => _IraqEduAppState();
 }
 
-class _IraqEduAppState extends State<IraqEduApp> {
-  late final _router = buildRouter();
+class _IraqEduAppState extends ConsumerState<IraqEduApp> {
+  late final _router = ref.read(routerProvider);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'منصة العراق التعليمية',
+      title: 'منصة المهندس التعليمية',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

@@ -97,7 +97,7 @@ abstract class AppLocalizations {
   /// Application title shown in launcher / app bar
   ///
   /// In ar, this message translates to:
-  /// **'منصة العراق التعليمية'**
+  /// **'منصة المهندس التعليمية'**
   String get appTitle;
 
   /// No description provided for @navHome.

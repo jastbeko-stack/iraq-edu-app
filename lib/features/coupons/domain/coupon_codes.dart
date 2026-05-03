@@ -39,7 +39,7 @@ abstract final class CouponCodes {
     ),
     Coupon(
       code: 'ALL2025',
-      label: 'الكوبون الشامل (كل الكورسات)',
+      label: 'كل كورسات الإعدادية',
       courseIds: [
         'c_calculus',
         'c_algebra',
@@ -49,6 +49,51 @@ abstract final class CouponCodes {
         'c_waves',
         'c_cell_biology',
         'c_human_physiology',
+      ],
+    ),
+    // ─── Engineering ────────────────────────────────────────────────────
+    Coupon(
+      code: 'ENG-MATH-2025',
+      label: 'كوبون الرياضيات الهندسية',
+      courseIds: ['c_eng_math1', 'c_eng_diff_eq'],
+    ),
+    Coupon(
+      code: 'ENG-EE-2025',
+      label: 'كوبون الكهرباء والإلكترونيات',
+      courseIds: ['c_eng_circuits', 'c_eng_electronics'],
+    ),
+    Coupon(
+      code: 'ENG-ALL-2025',
+      label: 'كل كورسات الهندسة',
+      courseIds: [
+        'c_eng_math1',
+        'c_eng_diff_eq',
+        'c_eng_statics',
+        'c_eng_circuits',
+        'c_eng_electronics',
+        'c_eng_cpp',
+      ],
+    ),
+    // ─── Medical ────────────────────────────────────────────────────────
+    Coupon(
+      code: 'MED-ANAT-2025',
+      label: 'كوبون كورسات التشريح',
+      courseIds: ['c_med_anatomy_upper', 'c_med_anatomy_lower'],
+    ),
+    Coupon(
+      code: 'MED-PHYS-2025',
+      label: 'كوبون الفسلجة الطبية',
+      courseIds: ['c_med_physiology'],
+    ),
+    Coupon(
+      code: 'MED-ALL-2025',
+      label: 'كل الكورسات الطبية',
+      courseIds: [
+        'c_med_anatomy_upper',
+        'c_med_anatomy_lower',
+        'c_med_physiology',
+        'c_med_biochem',
+        'c_med_pharma',
       ],
     ),
   ];
@@ -66,9 +111,8 @@ abstract final class CouponCodes {
   /// Demo codes shown as a hint inside the redemption sheet so reviewers can
   /// try the flow without a real backend.
   static const List<String> demoHintCodes = [
-    'MATH2025',
-    'PHYSICS2025',
-    'BIO2025',
     'ALL2025',
+    'ENG-ALL-2025',
+    'MED-ALL-2025',
   ];
 }

@@ -38,7 +38,40 @@ abstract final class StudyGuideCodes {
         'g_bio_diagrams',
         'g_ministerial_pack',
       ],
-      label: 'كل الملازم — الباقة الكاملة',
+      label: 'ملازم الإعدادية — الباقة الكاملة',
+    ),
+    // ─── Engineering ────────────────────────────────────────────────────
+    StudyGuideCoupon(
+      code: 'G-ENG-MATH-2025',
+      guideIds: ['g_eng_math1', 'g_eng_diff_eq'],
+      label: 'ملازم الرياضيات الهندسية',
+    ),
+    StudyGuideCoupon(
+      code: 'G-ENG-ALL-2025',
+      guideIds: [
+        'g_eng_math1',
+        'g_eng_diff_eq',
+        'g_eng_statics',
+        'g_eng_circuits',
+        'g_eng_cpp',
+      ],
+      label: 'ملازم الهندسة — الباقة الكاملة',
+    ),
+    // ─── Medical ────────────────────────────────────────────────────────
+    StudyGuideCoupon(
+      code: 'G-MED-ANAT-2025',
+      guideIds: ['g_med_anatomy_atlas'],
+      label: 'أطلس التشريح الطبي',
+    ),
+    StudyGuideCoupon(
+      code: 'G-MED-ALL-2025',
+      guideIds: [
+        'g_med_anatomy_atlas',
+        'g_med_physiology_summary',
+        'g_med_biochem_pathways',
+        'g_med_pharma_quick',
+      ],
+      label: 'ملازم الكليات الطبية — الباقة الكاملة',
     ),
   ];
 
@@ -54,8 +87,7 @@ abstract final class StudyGuideCodes {
   /// user can try the flow without typing.
   static const demoHintCodes = [
     'G-ALL-2025',
-    'G-BIO-2025',
-    'G-PHYS-2025',
-    'G-MATH-2025',
+    'G-ENG-ALL-2025',
+    'G-MED-ALL-2025',
   ];
 }

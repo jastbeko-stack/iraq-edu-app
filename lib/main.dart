@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,20 @@ Future<void> main() async {
   // frame paints. No-op on web/desktop and on iOS (where Apple does not
   // expose a "block screenshots" API — see [ScreenProtection]).
   await ScreenProtection.enableForApp();
+  // Make the status bar transparent so it blends with the AppBar / page
+  // background. Each screen's AppBar can still override icon brightness via
+  // [AppBarTheme.systemOverlayStyle] if needed.
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light, // Android
+      statusBarBrightness: Brightness.dark, // iOS
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+  // Draw behind the system bars (Android edge-to-edge).
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   // Resolve SharedPreferences once at boot so synchronous providers can rely
   // on it being available immediately.
   final prefs = await SharedPreferences.getInstance();

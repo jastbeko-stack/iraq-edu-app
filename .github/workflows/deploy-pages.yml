@@ -1,0 +1,47 @@
+name: Deploy to GitHub Pages
+
+# Builds the Flutter web bundle and publishes it to the gh-pages branch
+# whenever main changes (or on manual dispatch). Pages is served from
+# https://jastbeko-stack.github.io/iraq-edu-app/.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web (release, base-href=/iraq-edu-app/)
+        run: flutter build web --release --base-href "/iraq-edu-app/"
+
+      - name: Add SPA fallback + jekyll opt-out
+        run: |
+          touch build/web/.nojekyll
+          cp build/web/index.html build/web/404.html
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages

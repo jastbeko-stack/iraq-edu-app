@@ -47,3 +47,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    # Bundled study-guide PDFs. Drop a file into assets/pdfs/ and add a row
+    # to assets/pdfs/manifest.json — see assets/pdfs/README.md for details.
+    - assets/pdfs/

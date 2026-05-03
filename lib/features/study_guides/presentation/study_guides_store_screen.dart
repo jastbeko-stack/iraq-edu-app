@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
-import '../../admin/data/catalog_store.dart';
 import '../../tracks/data/track_providers.dart';
 import '../../tracks/domain/learning_track.dart';
 import '../data/study_guide_repository.dart';
@@ -70,7 +69,7 @@ class _StudyGuidesStoreScreenState
           _StoreHeaderCard(
             unlockedCount: unlocked.length,
             totalGuidesInTrack: guidesInTrack.length,
-            totalAllGuides: ref.watch(studyGuidesProvider).length,
+            totalAllGuides: ref.watch(allStudyGuidesProvider).length,
             track: track,
           ),
           const SizedBox(height: 16),

@@ -9,6 +9,7 @@ import '../../../shared/models/teacher.dart';
 import '../../coupons/data/coupon_repository.dart';
 import '../../coupons/domain/coupon.dart';
 import '../../coupons/domain/coupon_codes.dart';
+import '../../study_guides/data/pdf_manifest.dart';
 import '../../study_guides/data/study_guides_sample_data.dart';
 import '../../study_guides/domain/study_guide.dart';
 import '../../study_guides/domain/study_guide_codes.dart';
@@ -284,6 +285,12 @@ final courseByIdProvider = Provider.family<Course?, String>((ref, id) {
 final studyGuideByIdProvider = Provider.family<StudyGuide?, String>((ref, id) {
   final guides = ref.watch(studyGuidesProvider);
   for (final g in guides) {
+    if (g.id == id) return g;
+  }
+  // Fall back to bundled manifest entries so guides added via
+  // assets/pdfs/manifest.json resolve from detail screens / deep links.
+  final manifest = ref.watch(manifestStudyGuidesProvider);
+  for (final g in manifest) {
     if (g.id == id) return g;
   }
   return null;

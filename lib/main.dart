@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/router/app_router.dart';
 import 'core/security/screen_protection.dart';
+import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/coupons/data/coupon_repository.dart';
 import 'firebase_options.dart';
@@ -15,6 +17,7 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
+  await _initializeSupabase();
   // Block screenshots/recording on Android (FLAG_SECURE) before the first
   // frame paints. No-op on web/desktop and on iOS (where Apple does not
   // expose a "block screenshots" API — see [ScreenProtection]).
@@ -42,6 +45,17 @@ Future<void> main() async {
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const IraqEduApp(),
     ),
+  );
+}
+
+/// Initializes Supabase with the project's URL + publishable anon key. The
+/// admin portal uses this for PDF uploads (Storage) and the student app
+/// uses it for the realtime guides catalog (Postgres + Realtime).
+Future<void> _initializeSupabase() async {
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+    debug: kDebugMode,
   );
 }
 

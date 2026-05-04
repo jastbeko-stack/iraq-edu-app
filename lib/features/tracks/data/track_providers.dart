@@ -4,6 +4,7 @@ import '../../../shared/models/course.dart';
 import '../../../shared/models/teacher.dart';
 import '../../admin/data/catalog_store.dart';
 import '../../study_guides/data/pdf_manifest.dart';
+import '../../study_guides/data/supabase_guides_service.dart';
 import '../../study_guides/domain/study_guide.dart';
 import '../domain/learning_track.dart';
 
@@ -28,16 +29,24 @@ final coursesForTrackProvider = Provider.family<List<Course>, LearningTrack>(
       ref.watch(coursesProvider).where((c) => c.trackId == track.id).toList(),
 );
 
-/// All study guides visible to students: catalog (seed + admin-portal
-/// additions persisted in shared_preferences) merged with bundled manifest
-/// entries (`assets/pdfs/manifest.json`). Manifest entries win on id
-/// collisions because they ship with a real PDF binary.
+/// All study guides visible to students, merged from three sources in
+/// priority order (later sources win on id collisions):
+///
+/// 1. Local catalog seed + per-browser admin-portal additions (held in
+///    `shared_preferences`).
+/// 2. Bundled manifest entries from `assets/pdfs/manifest.json` (PDFs that
+///    ship with the build).
+/// 3. Supabase Postgres rows streamed in realtime — this is the
+///    cross-device source of truth where admin-portal uploads land.
 final allStudyGuidesProvider = Provider<List<StudyGuide>>((ref) {
   final catalog = ref.watch(studyGuidesProvider);
   final manifest = ref.watch(manifestStudyGuidesProvider);
-  if (manifest.isEmpty) return catalog;
+  final remote = ref.watch(supabaseGuidesListProvider);
   final byId = <String, StudyGuide>{for (final g in catalog) g.id: g};
   for (final g in manifest) {
+    byId[g.id] = g;
+  }
+  for (final g in remote) {
     byId[g.id] = g;
   }
   return byId.values.toList(growable: false);

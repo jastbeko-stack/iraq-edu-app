@@ -11,6 +11,7 @@ import '../../coupons/domain/coupon.dart';
 import '../../coupons/domain/coupon_codes.dart';
 import '../../study_guides/data/pdf_manifest.dart';
 import '../../study_guides/data/study_guides_sample_data.dart';
+import '../../study_guides/data/supabase_guides_service.dart';
 import '../../study_guides/domain/study_guide.dart';
 import '../../study_guides/domain/study_guide_codes.dart';
 
@@ -291,6 +292,12 @@ final studyGuideByIdProvider = Provider.family<StudyGuide?, String>((ref, id) {
   // assets/pdfs/manifest.json resolve from detail screens / deep links.
   final manifest = ref.watch(manifestStudyGuidesProvider);
   for (final g in manifest) {
+    if (g.id == id) return g;
+  }
+  // Fall back to remote Supabase rows so guides uploaded via the admin
+  // portal resolve everywhere (deep links, detail screens, etc.).
+  final remote = ref.watch(supabaseGuidesListProvider);
+  for (final g in remote) {
     if (g.id == id) return g;
   }
   return null;

@@ -10,7 +10,7 @@ abstract final class SupabaseConfig {
   /// Publishable key (`sb_publishable_...`) — the public client-side key.
   /// Storage / Postgres access is gated by RLS policies, not this key.
   static const String anonKey =
-      'sb_publishable_2hdC01k-3ozs_u-01_K6v6R88Y3x6GZ8_B8p6G';
+      'sb_publishable_2hdC01k-3ozs_u-Ooc6grA_7mhbNJZn';
 
   /// Storage bucket holding bundled and admin-uploaded study-guide PDFs.
   /// Must be created as **Public** in the Supabase dashboard so download

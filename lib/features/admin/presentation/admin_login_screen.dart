@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../data/admin_auth.dart';
 
-/// Email/password login for the admin portal. Demo creds are surfaced on
-/// the page so reviewers can try the dashboard without a backend.
+/// Email/password login for the admin portal. Credentials are validated
+/// against [AdminCredentials] in `admin_auth.dart`.
 class AdminLoginScreen extends ConsumerStatefulWidget {
   const AdminLoginScreen({super.key});
 
@@ -16,7 +16,7 @@ class AdminLoginScreen extends ConsumerStatefulWidget {
 
 class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController(text: AdminCredentials.email);
+  final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _submitting = false;
   bool _obscure = true;
@@ -163,53 +163,6 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
                               )
                             : const Icon(Icons.login),
                         label: const Text('دخول'),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondaryContainer
-                              .withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  size: 16,
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'بيانات تجريبية',
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            SelectableText(
-                              'البريد: ${AdminCredentials.email}\n'
-                              'كلمة المرور: ${AdminCredentials.password}',
-                              textDirection: TextDirection.ltr,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            const SizedBox(height: 10),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                _emailCtrl.text = AdminCredentials.email;
-                                _passCtrl.text = AdminCredentials.password;
-                                setState(() => _error = null);
-                              },
-                              icon: const Icon(Icons.auto_fix_high, size: 18),
-                              label: const Text('تعبئة البيانات التجريبية'),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),

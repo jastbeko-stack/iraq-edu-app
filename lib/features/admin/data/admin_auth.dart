@@ -4,11 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../coupons/data/coupon_repository.dart'
     show sharedPreferencesProvider;
 
-/// Demo admin credentials — visible on the login screen so reviewers can
-/// try the portal without backend.
+/// Admin credentials. Hardcoded into the client bundle — anyone with
+/// browser dev-tools can extract them, so this is a casual gate, not real
+/// security. To upgrade, swap [AdminAuthController.signIn] over to
+/// Supabase Auth (or Firebase Auth) and remove the constants entirely.
 class AdminCredentials {
-  static const email = 'admin@iraqedu.com';
-  static const password = 'admin123';
+  static const email = 'aliluai2001@gmail.com';
+  static const password = 'Alilaui99@';
 }
 
 const _kAdminSignedInKey = 'admin_signed_in_v1';
@@ -37,14 +39,13 @@ class AdminAuthController extends StateNotifier<bool> {
     required String email,
     required String password,
   }) async {
-    // Trim both fields and case-fold the password for the demo so a stray
-    // space from autofill or iOS autocapitalize doesn't reject the login.
-    // The real Firebase Auth path will be exact-match.
+    // Email is case-insensitive (matches RFC mailbox conventions) so the
+    // user typing 'Aliluai2001@gmail.com' on iOS still authenticates.
+    // Password is exact-match — we deliberately don't lowercase it because
+    // the chosen password contains uppercase letters whose case matters.
     final emailOk =
         email.trim().toLowerCase() == AdminCredentials.email.toLowerCase();
-    final passOk =
-        password.trim().toLowerCase() ==
-        AdminCredentials.password.toLowerCase();
+    final passOk = password == AdminCredentials.password;
     if (!emailOk || !passOk) return const AdminLoginInvalid();
     await _prefs.setBool(_kAdminSignedInKey, true);
     state = true;

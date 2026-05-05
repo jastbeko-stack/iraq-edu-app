@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iraq_edu_app/features/auth/data/auth_controller.dart';
 import 'package:iraq_edu_app/features/coupons/data/coupon_repository.dart';
 import 'package:iraq_edu_app/features/coupons/domain/coupon.dart';
 import 'package:iraq_edu_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Test override that hands the providers an [AuthController] which
+/// stays signed-out and never subscribes to Supabase — avoids the
+/// session-refresh timer that would otherwise outlive the widget tree.
+final _authOverride = authControllerProvider
+    .overrideWith((ref) => AuthController.signedOutForTest());
 
 void main() {
   setUp(() {
@@ -17,7 +24,10 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          _authOverride,
+        ],
         child: const IraqEduApp(),
       ),
     );
@@ -30,7 +40,10 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          _authOverride,
+        ],
         child: const IraqEduApp(),
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../announcements/data/announcements_service.dart';
 import '../../announcements/domain/announcement.dart';
+import '../../auth/data/auth_controller.dart';
 import '../../tracks/data/track_providers.dart';
 import '../../tracks/domain/learning_track.dart';
 
@@ -33,6 +34,12 @@ class HubScreen extends ConsumerWidget {
         children: [
           Consumer(
             builder: (context, ref, _) {
+              // Only show announcements to signed-in students. Casual
+              // visitors browsing the public landing page should not see
+              // internal communications.
+              if (!ref.watch(isSignedInProvider)) {
+                return const SizedBox.shrink();
+              }
               final a = ref.watch(activeAnnouncementProvider);
               if (a == null) return const SizedBox.shrink();
               return Padding(

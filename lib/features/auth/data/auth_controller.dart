@@ -14,17 +14,28 @@ import '../domain/auth_state.dart';
 /// controller's job is just to map `User` ↔ [AuthUser] and translate
 /// `AuthException` codes into Arabic-friendly messages.
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._client) : super(const AuthSignedOut()) {
+  AuthController(supa.SupabaseClient client)
+      : _client = client,
+        super(const AuthSignedOut()) {
     _restore();
-    _sub = _client.auth.onAuthStateChange.listen(_onAuthChange);
+    _sub = _client!.auth.onAuthStateChange.listen(_onAuthChange);
   }
 
-  final supa.SupabaseClient _client;
+  /// Test-only constructor that creates a controller without any Supabase
+  /// subscription. Used by widget tests where we don't want a Supabase
+  /// session-refresh timer left pending after the widget tree disposes.
+  AuthController.signedOutForTest()
+      : _client = null,
+        super(const AuthSignedOut());
+
+  final supa.SupabaseClient? _client;
   StreamSubscription<supa.AuthState>? _sub;
 
   void _restore() {
-    final session = _client.auth.currentSession;
-    final user = _client.auth.currentUser;
+    final client = _client;
+    if (client == null) return;
+    final session = client.auth.currentSession;
+    final user = client.auth.currentUser;
     if (session != null && user != null) {
       state = AuthSignedIn(user: _mapUser(user));
     }
@@ -62,7 +73,7 @@ class AuthController extends StateNotifier<AuthState> {
     final trimmedEmail = email.trim();
     final trimmedName = displayName?.trim();
     try {
-      final res = await _client.auth.signUp(
+      final res = await _client!.auth.signUp(
         email: trimmedEmail,
         password: password,
         data: trimmedName != null && trimmedName.isNotEmpty
@@ -94,7 +105,7 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
   }) async {
     try {
-      final res = await _client.auth.signInWithPassword(
+      final res = await _client!.auth.signInWithPassword(
         email: email.trim(),
         password: password,
       );
@@ -122,7 +133,7 @@ class AuthController extends StateNotifier<AuthState> {
   /// because the user is still meant to stay on the login screen.
   Future<bool> sendPasswordReset(String email) async {
     try {
-      await _client.auth.resetPasswordForEmail(email.trim());
+      await _client!.auth.resetPasswordForEmail(email.trim());
       return true;
     } on supa.AuthException catch (e) {
       state = AuthError(message: _arabicError(e), previous: state);
@@ -138,7 +149,7 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> signOut() async {
     try {
-      await _client.auth.signOut();
+      await _client!.auth.signOut();
     } finally {
       state = const AuthSignedOut();
     }

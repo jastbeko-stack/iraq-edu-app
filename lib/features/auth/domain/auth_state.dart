@@ -1,13 +1,17 @@
 /// Authenticated user as exposed to the rest of the app.
 ///
-/// Mirrors the shape of [User] from `firebase_auth` (uid + phoneNumber)
-/// so swapping the local stub for the real Firebase implementation is a
-/// drop-in change.
+/// Mirrors the shape of Supabase's `User` (id + email + display_name) so
+/// the controller can map straight from `Supabase.instance.client.auth.currentUser`.
 class AuthUser {
-  const AuthUser({required this.uid, required this.phoneNumber});
+  const AuthUser({
+    required this.uid,
+    required this.email,
+    this.displayName,
+  });
 
   final String uid;
-  final String phoneNumber;
+  final String email;
+  final String? displayName;
 }
 
 /// Top-level auth state. Sealed so the UI can `switch` exhaustively.
@@ -20,33 +24,27 @@ class AuthSignedOut extends AuthState {
   const AuthSignedOut();
 }
 
-/// We've sent (or "sent" — local stub) a verification code to [phoneNumber].
-/// The OTP screen is shown in this state.
-class AuthCodeSent extends AuthState {
-  const AuthCodeSent({required this.phoneNumber, required this.verificationId});
-
-  /// E.164 phone number, e.g. `+9647712345678`.
-  final String phoneNumber;
-
-  /// Opaque id returned by the verification provider. Real Firebase
-  /// returns a long string here; the stub returns a uuid-ish string.
-  final String verificationId;
+/// Sign-up succeeded but the project requires email confirmation. The UI
+/// shows a "check your inbox" message and waits for the user to come back
+/// after clicking the confirmation link in the email.
+class AuthAwaitingConfirmation extends AuthState {
+  const AuthAwaitingConfirmation({required this.email});
+  final String email;
 }
 
 /// User finished verification and is now signed in.
 class AuthSignedIn extends AuthState {
   const AuthSignedIn({required this.user});
-
   final AuthUser user;
 }
 
-/// A recoverable error happened during sign-in or verification.
+/// A recoverable error happened during sign-in or sign-up.
 class AuthError extends AuthState {
   const AuthError({required this.message, this.previous});
 
   final String message;
 
   /// Previous state so the UI can decide whether to bounce back to the
-  /// phone-entry screen or stay on the OTP screen.
+  /// login screen or stay on the same screen.
   final AuthState? previous;
 }

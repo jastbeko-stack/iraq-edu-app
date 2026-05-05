@@ -1,130 +1,195 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
-import '../../coupons/data/coupon_repository.dart'
-    show sharedPreferencesProvider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
+
+import '../../study_guides/data/supabase_guides_service.dart'
+    show supabaseClientProvider;
 import '../domain/auth_state.dart';
 
-const _kAuthUidKey = 'auth_uid_v1';
-const _kAuthPhoneKey = 'auth_phone_v1';
-
-/// Local stub of phone OTP authentication.
+/// Email/password authentication backed by Supabase Auth.
 ///
-/// Real Firebase wiring will replace [AuthController] with one that calls
-/// `FirebaseAuth.instance.verifyPhoneNumber` / `signInWithCredential`. The
-/// API surface here matches what the screens expect, so swapping the
-/// implementation is a one-file change.
-///
-/// Stub behavior:
-/// - Any phone matching `+9647[0-9]{9}` is accepted into the "code sent"
-///   state with verification id `stub-<phone>`.
-/// - The accepted code is **`123456`** (also surfaced to the UI as a
-///   demo hint).
-/// - On success a deterministic uid `local-<digits>` is generated and
-///   persisted to `SharedPreferences` so the user stays signed in across
-///   refreshes.
+/// Supabase manages session persistence for us (encrypted in
+/// `flutter_secure_storage` on mobile, `localStorage` on web), so the
+/// controller's job is just to map `User` ↔ [AuthUser] and translate
+/// `AuthException` codes into Arabic-friendly messages.
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._prefs) : super(const AuthSignedOut()) {
+  AuthController(this._client) : super(const AuthSignedOut()) {
     _restore();
+    _sub = _client.auth.onAuthStateChange.listen(_onAuthChange);
   }
 
-  final SharedPreferences _prefs;
-
-  /// Validates +964 phone numbers (Iraqi mobile numbers always start with 7
-  /// after the country code and are 10 digits long total).
-  static final RegExp iraqiMobileRegExp = RegExp(r'^\+9647\d{8}$');
-
-  /// Hardcoded demo OTP, surfaced in the OTP screen to make manual testing
-  /// trivial. Real Firebase sends a real SMS so this constant goes away.
-  static const stubVerificationCode = '123456';
+  final supa.SupabaseClient _client;
+  StreamSubscription<supa.AuthState>? _sub;
 
   void _restore() {
-    final uid = _prefs.getString(_kAuthUidKey);
-    final phone = _prefs.getString(_kAuthPhoneKey);
-    if (uid != null && phone != null) {
-      state = AuthSignedIn(
-        user: AuthUser(uid: uid, phoneNumber: phone),
-      );
+    final session = _client.auth.currentSession;
+    final user = _client.auth.currentUser;
+    if (session != null && user != null) {
+      state = AuthSignedIn(user: _mapUser(user));
     }
   }
 
-  /// Begin sign-in for [phoneNumber] (must be E.164, e.g. `+9647712345678`).
-  Future<void> sendCode(String phoneNumber) async {
-    final normalized = phoneNumber.replaceAll(RegExp(r'\s'), '');
-    if (!iraqiMobileRegExp.hasMatch(normalized)) {
+  AuthUser _mapUser(supa.User u) {
+    final meta = u.userMetadata ?? const <String, dynamic>{};
+    return AuthUser(
+      uid: u.id,
+      email: u.email ?? '',
+      displayName: meta['display_name'] as String?,
+    );
+  }
+
+  void _onAuthChange(supa.AuthState event) {
+    final session = event.session;
+    if (session != null) {
+      state = AuthSignedIn(user: _mapUser(session.user));
+    } else if (state is AuthSignedIn) {
+      // Only collapse to signed-out when we *were* signed in. Don't stomp on
+      // an in-flight error message or the "check your email" state.
+      state = const AuthSignedOut();
+    }
+  }
+
+  /// Create a new student account. If the project has "Confirm email"
+  /// enabled, this transitions to [AuthAwaitingConfirmation] and the user
+  /// has to click the link in their inbox before [signIn] will succeed.
+  /// Otherwise it transitions straight to [AuthSignedIn].
+  Future<void> signUp({
+    required String email,
+    required String password,
+    String? displayName,
+  }) async {
+    final trimmedEmail = email.trim();
+    final trimmedName = displayName?.trim();
+    try {
+      final res = await _client.auth.signUp(
+        email: trimmedEmail,
+        password: password,
+        data: trimmedName != null && trimmedName.isNotEmpty
+            ? {'display_name': trimmedName}
+            : null,
+      );
+      final user = res.user;
+      final session = res.session;
+      if (user != null && session != null) {
+        state = AuthSignedIn(user: _mapUser(user));
+        return;
+      }
+      // No session means "confirm your email" is on. The Supabase SDK still
+      // returns a User row but no auth tokens until confirmation completes.
+      state = AuthAwaitingConfirmation(email: trimmedEmail);
+    } on supa.AuthException catch (e) {
+      state = AuthError(message: _arabicError(e), previous: state);
+    } catch (e) {
       state = AuthError(
-        message: 'الرقم غير صحيح. أدخل رقم عراقي بصيغة +9647XXXXXXXX',
+        message: 'تعذر إنشاء الحساب. تحقق من اتصالك بالإنترنت.',
         previous: state,
       );
-      return;
     }
-
-    // Simulate the network round-trip Firebase would make.
-    await Future<void>.delayed(const Duration(milliseconds: 600));
-    state = AuthCodeSent(
-      phoneNumber: normalized,
-      verificationId: 'stub-$normalized',
-    );
   }
 
-  /// Verify the OTP code against the current [AuthCodeSent] state.
-  Future<void> verifyCode(String code) async {
-    final current = state;
-    if (current is! AuthCodeSent) {
-      state = AuthError(
-        message: 'لم يتم إرسال أي كود بعد. ابدأ من جديد.',
-        previous: current,
+  /// Sign in with email + password.
+  Future<void> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final res = await _client.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
       );
-      return;
-    }
-
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-
-    if (code != stubVerificationCode) {
+      final user = res.user;
+      if (user == null) {
+        state = AuthError(
+          message: 'تعذر تسجيل الدخول. حاول مرة أخرى.',
+          previous: state,
+        );
+        return;
+      }
+      state = AuthSignedIn(user: _mapUser(user));
+    } on supa.AuthException catch (e) {
+      state = AuthError(message: _arabicError(e), previous: state);
+    } catch (e) {
       state = AuthError(
-        message: 'الكود غير صحيح. حاول مرة أخرى أو أعد إرسال الكود.',
-        previous: current,
+        message: 'تعذر تسجيل الدخول. تحقق من اتصالك بالإنترنت.',
+        previous: state,
       );
-      return;
     }
-
-    final uid = 'local-${current.phoneNumber.replaceAll('+', '')}';
-    await _prefs.setString(_kAuthUidKey, uid);
-    await _prefs.setString(_kAuthPhoneKey, current.phoneNumber);
-    state = AuthSignedIn(
-      user: AuthUser(uid: uid, phoneNumber: current.phoneNumber),
-    );
   }
 
-  /// Resend the code (no real cooldown on the stub — the screen enforces
-  /// a 60s timer client-side).
-  Future<void> resendCode() async {
-    final current = state;
-    final phoneNumber = switch (current) {
-      AuthCodeSent() => current.phoneNumber,
-      AuthError(:final previous) when previous is AuthCodeSent =>
-        previous.phoneNumber,
-      _ => null,
-    };
-    if (phoneNumber == null) return;
-    await sendCode(phoneNumber);
-  }
-
-  /// Drop back to phone entry without losing the user's place if the OTP
-  /// code was wrong but recoverable.
-  void backToPhoneEntry() {
-    state = const AuthSignedOut();
+  /// Send a password-reset email. Caller (UI) is expected to show a
+  /// "check your inbox" snack; we don't move into [AuthError] on success
+  /// because the user is still meant to stay on the login screen.
+  Future<bool> sendPasswordReset(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(email.trim());
+      return true;
+    } on supa.AuthException catch (e) {
+      state = AuthError(message: _arabicError(e), previous: state);
+      return false;
+    } catch (e) {
+      state = AuthError(
+        message: 'تعذر إرسال رابط الاستعادة. حاول لاحقاً.',
+        previous: state,
+      );
+      return false;
+    }
   }
 
   Future<void> signOut() async {
-    await _prefs.remove(_kAuthUidKey);
-    await _prefs.remove(_kAuthPhoneKey);
-    state = const AuthSignedOut();
+    try {
+      await _client.auth.signOut();
+    } finally {
+      state = const AuthSignedOut();
+    }
+  }
+
+  /// Reset transient error / awaiting-confirmation state back to whatever
+  /// preceded it. Useful when the user dismisses an error banner.
+  void clearTransient() {
+    final s = state;
+    if (s is AuthError) {
+      state = s.previous ?? const AuthSignedOut();
+    } else if (s is AuthAwaitingConfirmation) {
+      state = const AuthSignedOut();
+    }
+  }
+
+  String _arabicError(supa.AuthException e) {
+    final msg = e.message.toLowerCase();
+    if (msg.contains('invalid login credentials') ||
+        msg.contains('invalid_credentials')) {
+      return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    }
+    if (msg.contains('already registered') ||
+        msg.contains('user already registered') ||
+        msg.contains('user_already_exists')) {
+      return 'هذا البريد مسجّل مسبقاً. سجّل الدخول مباشرة.';
+    }
+    if (msg.contains('email not confirmed')) {
+      return 'لم تؤكّد بريدك بعد. افتح بريدك واضغط على رابط التأكيد.';
+    }
+    if (msg.contains('weak password') || msg.contains('password should be')) {
+      return 'كلمة المرور ضعيفة. استخدم 6 أحرف على الأقل.';
+    }
+    if (msg.contains('rate limit') || msg.contains('too many')) {
+      return 'حاولت كثيراً. انتظر دقيقة وأعد المحاولة.';
+    }
+    if (msg.contains('email') && msg.contains('invalid')) {
+      return 'صيغة البريد الإلكتروني غير صحيحة.';
+    }
+    return 'حدث خطأ: ${e.message}';
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
   }
 }
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
-  (ref) => AuthController(ref.watch(sharedPreferencesProvider)),
+  (ref) => AuthController(ref.watch(supabaseClientProvider)),
 );
 
 /// Convenience: is the user signed in?

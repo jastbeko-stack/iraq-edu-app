@@ -194,16 +194,20 @@ class _AuthHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final (title, subtitle, signedIn) = switch (state) {
-      AuthSignedIn(:final user) => (user.phoneNumber, 'مسجّل دخول', true),
-      AuthCodeSent() => (
-        'قيد التحقق',
-        'انتقل لشاشة الكود لإكمال التسجيل',
+      AuthSignedIn(:final user) => (
+        user.displayName?.isNotEmpty == true ? user.displayName! : user.email,
+        user.displayName?.isNotEmpty == true ? user.email : 'مسجّل دخول',
+        true,
+      ),
+      AuthAwaitingConfirmation(:final email) => (
+        'تأكيد البريد',
+        'أرسلنا رابط تأكيد إلى $email',
         false,
       ),
       AuthError(:final message) => ('خطأ', message, false),
       AuthSignedOut() => (
         'لم تقم بتسجيل الدخول بعد',
-        'سجل دخول برقم هاتفك للوصول إلى كورساتك وملازمك',
+        'سجّل دخول للوصول إلى كورساتك وملازمك المفعّلة عبر أجهزتك',
         false,
       ),
     };
@@ -232,7 +236,7 @@ class _AuthHeader extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    textDirection: signedIn
+                    textDirection: title.contains('@')
                         ? TextDirection.ltr
                         : TextDirection.rtl,
                     style: theme.textTheme.titleMedium?.copyWith(

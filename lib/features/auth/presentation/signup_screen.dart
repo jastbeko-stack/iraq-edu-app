@@ -3,31 +3,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_controller.dart';
 import '../domain/auth_state.dart';
-import 'signup_screen.dart';
+import 'login_screen.dart';
 
-/// Email + password sign-in.
+/// Email + password account creation.
 ///
-/// On success the controller fires `onAuthStateChange` and the
-/// `Navigator.pop` here returns the caller to the previous screen
-/// (typically the profile / "حسابي" tab).
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+/// On success either:
+/// - signs the user in immediately (when "Confirm email" is OFF in
+///   Supabase), and pops back to the previous screen, or
+/// - shows the [_AwaitingConfirmation] panel asking the user to click the
+///   link in their inbox before they can sign in.
+class SignUpScreen extends ConsumerStatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
   bool _submitting = false;
   bool _obscure = true;
 
   @override
   void dispose() {
+    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _confirmCtrl.dispose();
     super.dispose();
   }
 
@@ -36,48 +42,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _submitting = true);
-    await ref.read(authControllerProvider.notifier).signIn(
+    await ref.read(authControllerProvider.notifier).signUp(
           email: _emailCtrl.text,
           password: _passCtrl.text,
+          displayName: _nameCtrl.text,
         );
     if (!mounted) return;
     setState(() => _submitting = false);
 
     if (ref.read(authControllerProvider) is AuthSignedIn) {
+      // Project has email confirmation OFF — user is in.
       Navigator.of(context).pop();
     }
-  }
-
-  Future<void> _forgotPassword() async {
-    final email = _emailCtrl.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('أدخل بريدك في الحقل أعلاه أولاً.'),
-        ),
-      );
-      return;
-    }
-    final ok =
-        await ref.read(authControllerProvider.notifier).sendPasswordReset(email);
-    if (!mounted) return;
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('أرسلنا رابط استعادة كلمة المرور إلى $email.'),
-        ),
-      );
-    }
+    // For AuthAwaitingConfirmation we stay on the screen; build() will
+    // render the inbox-instruction panel automatically.
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final state = ref.watch(authControllerProvider);
+
+    if (state is AuthAwaitingConfirmation) {
+      return _AwaitingConfirmation(email: state.email);
+    }
+
     final errorMessage = state is AuthError ? state.message : null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('تسجيل الدخول')),
+      appBar: AppBar(title: const Text('إنشاء حساب جديد')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -104,11 +97,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.lock_outline,
+                        const Icon(Icons.person_add_alt_1,
                             color: Colors.white, size: 32),
                         const SizedBox(height: 8),
                         Text(
-                          'مرحباً بعودتك',
+                          'أنشئ حسابك',
                           style: theme.textTheme.titleLarge?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -116,7 +109,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'سجّل دخولك للوصول إلى كورساتك وملازمك.',
+                          'حسابك يحفظ كورساتك وملازمك المفعّلة عبر أجهزتك.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.white.withValues(alpha: 0.9),
                           ),
@@ -125,6 +118,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _nameCtrl,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'الاسم الكامل',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'أدخل اسمك' : null,
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
@@ -154,7 +158,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     enableSuggestions: false,
                     textCapitalization: TextCapitalization.none,
                     decoration: InputDecoration(
-                      labelText: 'كلمة المرور',
+                      labelText: 'كلمة المرور (٦ أحرف على الأقل)',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -166,8 +170,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             setState(() => _obscure = !_obscure),
                       ),
                     ),
-                    validator: (v) =>
-                        (v == null || v.isEmpty) ? 'أدخل كلمة المرور' : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'أدخل كلمة المرور';
+                      if (v.length < 6) {
+                        return 'كلمة المرور قصيرة (٦ أحرف على الأقل)';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _confirmCtrl,
+                    obscureText: _obscure,
+                    textDirection: TextDirection.ltr,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
+                    decoration: const InputDecoration(
+                      labelText: 'تأكيد كلمة المرور',
+                      prefixIcon: Icon(Icons.lock_reset_outlined),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'أعد إدخال كلمة المرور';
+                      if (v != _passCtrl.text) {
+                        return 'كلمتا المرور غير متطابقتين';
+                      }
+                      return null;
+                    },
                     onFieldSubmitted: (_) => _submit(),
                   ),
                   if (errorMessage != null) ...[
@@ -198,14 +227,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ],
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: TextButton(
-                      onPressed: _forgotPassword,
-                      child: const Text('نسيت كلمة المرور؟'),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: _submitting ? null : _submit,
                     icon: _submitting
@@ -217,15 +239,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : const Icon(Icons.login),
-                    label: const Text('دخول'),
+                        : const Icon(Icons.person_add_alt),
+                    label: const Text('إنشاء الحساب'),
                   ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'ما عندك حساب؟',
+                        'عندك حساب؟',
                         style: theme.textTheme.bodyMedium,
                       ),
                       TextButton(
@@ -235,16 +257,90 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               .clearTransient();
                           Navigator.of(context).pushReplacement(
                             MaterialPageRoute(
-                              builder: (_) => const SignUpScreen(),
+                              builder: (_) => const LoginScreen(),
                             ),
                           );
                         },
-                        child: const Text('سجّل الآن'),
+                        child: const Text('سجّل الدخول'),
                       ),
                     ],
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AwaitingConfirmation extends ConsumerWidget {
+  const _AwaitingConfirmation({required this.email});
+  final String email;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('تأكيد البريد')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.mark_email_read_outlined,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'افتح بريدك',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(text: 'أرسلنا رابط تأكيد إلى '),
+                      TextSpan(
+                        text: email,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const TextSpan(
+                          text:
+                              '. اضغط على الرابط في البريد ثم ارجع وسجّل دخولك.'),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () {
+                    ref
+                        .read(authControllerProvider.notifier)
+                        .clearTransient();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => const LoginScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.login),
+                  label: const Text('متابعة لتسجيل الدخول'),
+                ),
+              ],
             ),
           ),
         ),

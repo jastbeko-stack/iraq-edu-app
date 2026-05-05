@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../announcements/data/announcements_service.dart';
+import '../../announcements/domain/announcement.dart';
 import '../../tracks/data/track_providers.dart';
 import '../../tracks/domain/learning_track.dart';
 
@@ -29,6 +31,16 @@ class HubScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
+          Consumer(
+            builder: (context, ref, _) {
+              final a = ref.watch(activeAnnouncementProvider);
+              if (a == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _AnnouncementBanner(announcement: a),
+              );
+            },
+          ),
           const _HubBanner(),
           const SizedBox(height: 28),
           Text(
@@ -247,6 +259,58 @@ class _MetaChip extends StatelessWidget {
               color: Colors.white,
               fontWeight: FontWeight.w700,
               fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnnouncementBanner extends StatelessWidget {
+  const _AnnouncementBanner({required this.announcement});
+  final Announcement announcement;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.tertiary.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.campaign,
+            color: theme.colorScheme.onTertiaryContainer,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  announcement.title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: theme.colorScheme.onTertiaryContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  announcement.body,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onTertiaryContainer,
+                    height: 1.45,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

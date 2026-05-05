@@ -5,14 +5,16 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../data/admin_auth.dart';
 import '../data/students_service.dart';
+import 'tabs/admin_announcements_tab.dart';
 import 'tabs/admin_coupons_tab.dart';
 import 'tabs/admin_courses_tab.dart';
 import 'tabs/admin_guides_tab.dart';
 import 'tabs/admin_students_tab.dart';
 import 'tabs/admin_teachers_tab.dart';
 
-/// Admin shell. Hosts 5 tabs:
-/// - الطلاب: read-only roster of registered student accounts (from Supabase)
+/// Admin shell. Hosts 6 tabs:
+/// - الطلاب: roster of registered students (search, CSV export, delete)
+/// - الإعلانات: CRUD on site-wide banners shown on the student home
 /// - المدرسون: CRUD on teachers (filtered by track)
 /// - الكورسات: CRUD on courses linked to teachers
 /// - الملازم: CRUD on study guides + Supabase PDF upload
@@ -24,7 +26,7 @@ class AdminDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final newCount = ref.watch(newStudentsCountProvider);
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('لوحة الإدارة'),
@@ -46,6 +48,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                 icon: _StudentsTabIcon(newCount: newCount),
                 text: 'الطلاب',
               ),
+              const Tab(
+                icon: Icon(Icons.campaign_outlined),
+                text: 'الإعلانات',
+              ),
               const Tab(icon: Icon(Icons.person_outline), text: 'المدرسون'),
               const Tab(icon: Icon(Icons.menu_book_outlined), text: 'الكورسات'),
               const Tab(
@@ -62,6 +68,7 @@ class AdminDashboardScreen extends ConsumerWidget {
         body: const TabBarView(
           children: [
             AdminStudentsTab(),
+            AdminAnnouncementsTab(),
             AdminTeachersTab(),
             AdminCoursesTab(),
             AdminGuidesTab(),

@@ -65,6 +65,46 @@ class StudentsService {
               .toList(growable: false),
         );
   }
+
+  /// Permanently deletes a student account, removing both the row in
+  /// `auth.users` (which cascades to `public.profiles` via FK) and any
+  /// session that account had. Backed by a `security definer` SQL function
+  /// so the anon client can call it from the admin portal.
+  Future<void> deleteStudent(String studentId) async {
+    await _client.rpc(
+      'admin_delete_student',
+      params: {'student_id': studentId},
+    );
+  }
+
+  /// Renders the current student list to a UTF-8 CSV string with a BOM so
+  /// Excel opens it with the right encoding even on Windows. Columns:
+  /// name, email, signup_at_iso, signup_at_local.
+  static String toCsv(List<StudentProfile> students) {
+    final buf = StringBuffer('\uFEFF'); // BOM for Excel
+    buf.writeln('name,email,signup_at_utc,signup_at_local');
+    for (final s in students) {
+      final local = s.createdAt.toLocal();
+      buf.writeln([
+        _csv(s.displayName),
+        _csv(s.email),
+        _csv(s.createdAt.toUtc().toIso8601String()),
+        _csv('${local.year.toString().padLeft(4, '0')}-'
+            '${local.month.toString().padLeft(2, '0')}-'
+            '${local.day.toString().padLeft(2, '0')} '
+            '${local.hour.toString().padLeft(2, '0')}:'
+            '${local.minute.toString().padLeft(2, '0')}'),
+      ].join(','));
+    }
+    return buf.toString();
+  }
+
+  static String _csv(String v) {
+    if (v.contains(',') || v.contains('"') || v.contains('\n')) {
+      return '"${v.replaceAll('"', '""')}"';
+    }
+    return v;
+  }
 }
 
 final studentsServiceProvider = Provider<StudentsService>(

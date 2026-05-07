@@ -37,6 +37,9 @@ dependencies:
   chewie: ^1.14.0
   video_player: ^2.11.1
   url_launcher: ^6.3.2
+  flutter_windowmanager_plus: ^1.0.1
+  supabase_flutter: ^2.12.4
+  file_picker: ^3.0.4
 
 dev_dependencies:
   flutter_test:
@@ -46,3 +49,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    # Bundled study-guide PDFs. Drop a file into assets/pdfs/ and add a row
+    # to assets/pdfs/manifest.json — see assets/pdfs/README.md for details.
+    - assets/pdfs/

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
-import '../../../shared/models/sample_data.dart';
+import '../../admin/data/catalog_store.dart';
 import '../../coupons/data/coupon_repository.dart';
 
 /// Detailed view for a single teacher: bio, stats, and the list of courses
@@ -16,7 +16,7 @@ class TeacherProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final teacher = SampleData.teacherById(teacherId);
+    final teacher = ref.watch(teacherByIdProvider(teacherId));
     final theme = Theme.of(context);
 
     if (teacher == null) {
@@ -26,7 +26,7 @@ class TeacherProfileScreen extends ConsumerWidget {
       );
     }
 
-    final courses = SampleData.coursesByTeacher(teacher.id);
+    final courses = ref.watch(coursesByTeacherProvider(teacher.id));
     final unlocked = ref.watch(unlockedCoursesProvider);
 
     return Scaffold(

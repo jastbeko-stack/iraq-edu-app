@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/sample_data.dart';
+import '../../admin/data/catalog_store.dart';
 import '../../coupons/data/coupon_repository.dart';
 import 'widgets/lesson_attachments_list.dart';
 import 'widgets/lesson_video_player.dart';
@@ -26,7 +27,7 @@ class LessonPlayerScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final course = SampleData.courseById(courseId);
+    final course = ref.watch(courseByIdProvider(courseId));
     final lessons = SampleData.lessonsForCourse(courseId);
     final lesson = lessons.where((l) => l.id == lessonId).firstOrNull;
 

@@ -1,11 +1,15 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/router/app_router.dart';
+import 'core/security/screen_protection.dart';
+import 'core/supabase/supabase_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/coupons/data/coupon_repository.dart';
 import 'firebase_options.dart';
@@ -13,6 +17,25 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await _initializeFirebase();
+  await _initializeSupabase();
+  // Block screenshots/recording on Android (FLAG_SECURE) before the first
+  // frame paints. No-op on web/desktop and on iOS (where Apple does not
+  // expose a "block screenshots" API — see [ScreenProtection]).
+  await ScreenProtection.enableForApp();
+  // Make the status bar transparent so it blends with the AppBar / page
+  // background. Each screen's AppBar can still override icon brightness via
+  // [AppBarTheme.systemOverlayStyle] if needed.
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light, // Android
+      statusBarBrightness: Brightness.dark, // iOS
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
+  // Draw behind the system bars (Android edge-to-edge).
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   // Resolve SharedPreferences once at boot so synchronous providers can rely
   // on it being available immediately.
   final prefs = await SharedPreferences.getInstance();
@@ -22,6 +45,17 @@ Future<void> main() async {
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const IraqEduApp(),
     ),
+  );
+}
+
+/// Initializes Supabase with the project's URL + publishable anon key. The
+/// admin portal uses this for PDF uploads (Storage) and the student app
+/// uses it for the realtime guides catalog (Postgres + Realtime).
+Future<void> _initializeSupabase() async {
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
+    debug: kDebugMode,
   );
 }
 
@@ -44,20 +78,20 @@ Future<void> _initializeFirebase() async {
 
 /// Root widget. Configures Arabic-only localization, the Material 3 theme,
 /// and the [GoRouter] navigation graph.
-class IraqEduApp extends StatefulWidget {
+class IraqEduApp extends ConsumerStatefulWidget {
   const IraqEduApp({super.key});
 
   @override
-  State<IraqEduApp> createState() => _IraqEduAppState();
+  ConsumerState<IraqEduApp> createState() => _IraqEduAppState();
 }
 
-class _IraqEduAppState extends State<IraqEduApp> {
-  late final _router = buildRouter();
+class _IraqEduAppState extends ConsumerState<IraqEduApp> {
+  late final _router = ref.read(routerProvider);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'منصة العراق التعليمية',
+      title: 'منصة المهندس التعليمية',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

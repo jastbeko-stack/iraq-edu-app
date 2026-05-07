@@ -1,0 +1,18 @@
+{
+  "_comment": "User-editable list of bundled PDF study guides. Add an entry per PDF you drop into this folder. See README.md in this same folder for the schema.",
+  "guides": [
+    {
+      "id": "manifest-sample-prep-math",
+      "name": "ملزمة الرياضيات النموذجية — مثال",
+      "path": "assets/pdfs/sample.pdf",
+      "trackId": "preparatory",
+      "subject": "الرياضيات",
+      "author": "فريق منصة المهندس",
+      "pageCount": 1,
+      "sizeBytes": 13264,
+      "priceIqd": 0,
+      "locked": false,
+      "description": "مثال توضيحي لكيفية إضافة ملزمة جديدة عبر assets/pdfs/manifest.json. احذف هذا المدخل بعد إضافة ملازمك الحقيقية."
+    }
+  ]
+}

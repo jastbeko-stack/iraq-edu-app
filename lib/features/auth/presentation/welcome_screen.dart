@@ -434,7 +434,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       'حقوق الطبع والنشر © 2024 - 2025',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white54,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -450,8 +451,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       'تم التطوير بواسطة المهندس علي لؤي',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],

@@ -161,44 +161,56 @@ class _HubHeader extends ConsumerWidget {
                       );
                     },
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   _NotificationBell(),
                   const Spacer(),
-                  // Brand: title above tagline, with a circular logo badge on
-                  // the leading edge (right-side in RTL).
+                  // Brand: title above tagline, sitting directly next to the
+                  // circular logo badge on the leading (right-side in RTL)
+                  // edge of the header. Keeping them flush mirrors the
+                  // reference design.
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         'منصة المهندس',
-                        style: theme.textTheme.titleLarge?.copyWith(
+                        style: theme.textTheme.headlineSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w900,
-                          height: 1.1,
+                          height: 1.05,
+                          fontSize: 22,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         'التعليمية',
                         style: theme.textTheme.titleSmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontWeight: FontWeight.w600,
-                          height: 1.2,
+                          height: 1.1,
+                          fontSize: 13,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(width: 10),
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
                     child: const Icon(
                       Icons.school_rounded,
                       color: AppColors.primary,
-                      size: 26,
+                      size: 28,
                     ),
                   ),
                 ],
@@ -272,7 +284,7 @@ class _HubHeader extends ConsumerWidget {
   }
 }
 
-/// Notification bell with an unread count badge.
+/// Notification bell with an unread indicator dot.
 class _NotificationBell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -290,6 +302,19 @@ class _NotificationBell extends StatelessWidget {
             Icons.notifications_outlined,
             color: Colors.white,
             size: 22,
+          ),
+        ),
+        PositionedDirectional(
+          top: 8,
+          end: 8,
+          child: Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: AppColors.danger,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primary, width: 1.5),
+            ),
           ),
         ),
       ],

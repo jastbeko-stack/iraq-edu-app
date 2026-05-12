@@ -6,66 +6,84 @@ import 'app_colors.dart';
 
 /// Builds the light and dark Material 3 themes used by the app.
 ///
-/// All Arabic text renders with the Cairo typeface, which is well-supported
-/// for Arabic glyphs and matches the modern look used by Iraqi edtech apps.
+/// The palette is anchored on a deep royal blue with a teal secondary,
+/// inspired by polished Arabic edtech platforms. Cards use soft shadows
+/// instead of borders for a calmer, more "premium" feel.
 abstract final class AppTheme {
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: brightness,
-      primary: AppColors.primary,
-      secondary: AppColors.secondary,
-      error: AppColors.error,
-    );
+    final isLight = brightness == Brightness.light;
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: brightness,
+          primary: AppColors.primary,
+          secondary: AppColors.secondary,
+          tertiary: AppColors.accent,
+          error: AppColors.error,
+        ).copyWith(
+          surface: isLight ? AppColors.cardLight : const Color(0xFF161D26),
+          surfaceContainerLowest: isLight
+              ? AppColors.surfaceLight
+              : AppColors.surfaceDark,
+          surfaceContainerLow: isLight
+              ? const Color(0xFFFBFCFE)
+              : const Color(0xFF131A23),
+          surfaceContainerHighest: isLight
+              ? const Color(0xFFEAF0F8)
+              : const Color(0xFF1B232E),
+        );
 
     final base = ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: brightness == Brightness.light
+      scaffoldBackgroundColor: isLight
           ? AppColors.surfaceLight
           : AppColors.surfaceDark,
+      splashFactory: InkSparkle.splashFactory,
     );
 
     return base.copyWith(
-      textTheme: GoogleFonts.cairoTextTheme(base.textTheme),
+      textTheme: GoogleFonts.cairoTextTheme(base.textTheme).apply(
+        bodyColor: colorScheme.onSurface,
+        displayColor: colorScheme.onSurface,
+      ),
       appBarTheme: AppBarTheme(
-        backgroundColor: base.scaffoldBackgroundColor,
-        foregroundColor: colorScheme.onSurface,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
-        // Force the system status bar overlay to match the AppBar so the area
-        // above the AppBar never paints opaque white on iOS / Android.
-        systemOverlayStyle: brightness == Brightness.light
-            ? const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.dark,
-                statusBarBrightness: Brightness.light,
-              )
-            : const SystemUiOverlayStyle(
-                statusBarColor: Colors.transparent,
-                statusBarIconBrightness: Brightness.light,
-                statusBarBrightness: Brightness.dark,
-              ),
+        scrolledUnderElevation: 0,
+        centerTitle: false,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          statusBarBrightness: Brightness.dark,
+        ),
         titleTextStyle: GoogleFonts.cairo(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: colorScheme.onSurface,
+          fontSize: 19,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
         ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         color: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: AppColors.primary.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(18),
         ),
+        margin: EdgeInsets.zero,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -79,6 +97,7 @@ abstract final class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
+          side: BorderSide(color: colorScheme.outlineVariant),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -88,11 +107,126 @@ abstract final class AppTheme {
           ),
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          textStyle: GoogleFonts.cairo(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surface,
+        hintStyle: GoogleFonts.cairo(
+          color: colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w500,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        side: BorderSide.none,
+        labelStyle: GoogleFonts.cairo(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.onSurface,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.primaryContainer,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.12),
         labelTextStyle: WidgetStatePropertyAll(
-          GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600),
+          GoogleFonts.cairo(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.primary);
+          }
+          return IconThemeData(color: colorScheme.onSurfaceVariant);
+        }),
+        height: 70,
+      ),
+      tabBarTheme: TabBarThemeData(
+        indicatorColor: Colors.white,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+        labelStyle: GoogleFonts.cairo(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+        ),
+        unselectedLabelStyle: GoogleFonts.cairo(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        dividerColor: Colors.transparent,
+      ),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        thickness: 1,
+        space: 1,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF1B2533),
+        contentTextStyle: GoogleFonts.cairo(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorScheme.surface,
+        elevation: 4,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        titleTextStyle: GoogleFonts.cairo(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: colorScheme.onSurface,
+        ),
+        contentTextStyle: GoogleFonts.cairo(
+          fontSize: 14,
+          color: colorScheme.onSurface,
+          height: 1.5,
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
     );

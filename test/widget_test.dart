@@ -33,7 +33,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('منصة المهندس التعليمية'), findsWidgets);
+    expect(find.text('منصة المهندس'), findsWidgets);
   });
 
   testWidgets('App enforces RTL directionality', (tester) async {

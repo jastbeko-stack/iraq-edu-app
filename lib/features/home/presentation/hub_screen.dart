@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../announcements/data/announcements_service.dart';
 import '../../announcements/domain/announcement.dart';
 import '../../auth/data/auth_controller.dart';
@@ -9,74 +13,257 @@ import '../../tracks/domain/learning_track.dart';
 
 /// Three-category landing screen ("Hub").
 ///
-/// This is the first thing a student sees when no [LearningTrack] is
-/// selected. Tapping a category sets [selectedTrackProvider], which causes
-/// [HomeScreen] to rebuild into the per-track home and the Teachers /
-/// الملازم tabs to scope themselves to that track.
+/// Acts as the public landing page: a curved royal-blue header carries the
+/// brand identity, a quick-actions strip surfaces the most common
+/// destinations, and the three track cards drive selection of a learning
+/// track. Once the user picks a track, [HomeScreen] swaps in
+/// [CategoryHomeScreen].
 class HubScreen extends ConsumerWidget {
   const HubScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('منصة المهندس التعليمية'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {},
-          ),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Match the curved blue header behind the status bar so the system
+      // overlay icons stay readable on both platforms.
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-        children: [
-          Consumer(
-            builder: (context, ref, _) {
-              // Only show announcements to signed-in students. Casual
-              // visitors browsing the public landing page should not see
-              // internal communications.
-              if (!ref.watch(isSignedInProvider)) {
-                return const SizedBox.shrink();
-              }
-              final a = ref.watch(activeAnnouncementProvider);
-              if (a == null) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: _AnnouncementBanner(announcement: a),
-              );
-            },
-          ),
-          const _HubBanner(),
-          const SizedBox(height: 28),
-          Text(
-            'اختر القسم',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
+      child: Scaffold(
+        backgroundColor: theme.colorScheme.surfaceContainerLowest,
+        body: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const _HubHeader(),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Consumer(
+                builder: (context, ref, _) {
+                  // Only show announcements to signed-in students. Casual
+                  // visitors browsing the public landing page should not see
+                  // internal communications.
+                  if (!ref.watch(isSignedInProvider)) {
+                    return const SizedBox.shrink();
+                  }
+                  final a = ref.watch(activeAnnouncementProvider);
+                  if (a == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 18),
+                    child: _AnnouncementBanner(announcement: a),
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'كل قسم يحتوي على مدرسيه، كورساته، وملازمه الخاصة.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            const _QuickActionsStrip(),
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'اختر القسم',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          for (final track in LearningTrack.values) ...[
-            _TrackCard(
-              track: track,
-              onTap: () =>
-                  ref.read(selectedTrackProvider.notifier).select(track),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'كل قسم يحتوي على مدرسيه، كورساته، وملازمه الخاصة.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ),
             const SizedBox(height: 14),
+            for (final track in LearningTrack.values) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: _TrackCard(
+                  track: track,
+                  onTap: () =>
+                      ref.read(selectedTrackProvider.notifier).select(track),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                '٢٠٢٥ — جميع الحقوق محفوظة',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+            const SizedBox(height: 24),
           ],
-          const SizedBox(height: 4),
-          Center(
-            child: Text(
-              '٢٠٢٥ — جميع الحقوق محفوظة',
-              style: theme.textTheme.bodySmall,
+        ),
+      ),
+    );
+  }
+}
+
+/// Curved royal-blue header carrying the brand identity, profile/notification
+/// affordances, and a search field that visually overlaps the bottom edge.
+class _HubHeader extends ConsumerWidget {
+  const _HubHeader();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final topInset = MediaQuery.of(context).padding.top;
+    // Reserve enough space for the curved header + the overlapping search
+    // field that sits half-outside the bottom edge. The header itself grows
+    // to cover the status bar inset on mobile.
+    final headerHeight = 160 + topInset;
+    return SizedBox(
+      height: headerHeight + 36,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Header background (gradient + curved bottom).
+          Container(
+            height: headerHeight,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryDark],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+              borderRadius: BorderRadius.vertical(
+                bottom: Radius.circular(28),
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, topInset + 14, 16, 0),
+              child: Row(
+                children: [
+                  // Profile avatar (signed-in users see their avatar; others
+                  // see a neutral icon).
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final signedIn = ref.watch(isSignedInProvider);
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(99),
+                        onTap: () => context.goNamed(AppRoute.profile),
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            signedIn
+                                ? Icons.person
+                                : Icons.person_outline_rounded,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  _NotificationBell(),
+                  const Spacer(),
+                  // Brand: title above tagline, with a circular logo badge on
+                  // the leading edge (right-side in RTL).
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'منصة المهندس',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                        ),
+                      ),
+                      Text(
+                        'التعليمية',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.school_rounded,
+                      color: AppColors.primary,
+                      size: 26,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Search field, overlapping the bottom edge of the header.
+          PositionedDirectional(
+            start: 16,
+            end: 16,
+            bottom: 0,
+            child: Material(
+              elevation: 6,
+              shadowColor: AppColors.primary.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsetsDirectional.only(start: 6, end: 14),
+                child: Row(
+                  children: [
+                    // Filter pill on the leading side (matches the reference
+                    // design, even though search itself is a no-op for now).
+                    Container(
+                      margin: const EdgeInsets.all(6),
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.tune_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          isCollapsed: true,
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          hintText: 'ابحث عن كورس، ملزمة، أو مدرّس…',
+                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
+                        ),
+                        textInputAction: TextInputAction.search,
+                      ),
+                    ),
+                    Icon(
+                      Icons.search_rounded,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -85,53 +272,142 @@ class HubScreen extends ConsumerWidget {
   }
 }
 
-class _HubBanner extends StatelessWidget {
-  const _HubBanner();
+/// Notification bell with an unread count badge.
+class _NotificationBell extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(
+            Icons.notifications_outlined,
+            color: Colors.white,
+            size: 22,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Grid of 4 quick-action tiles surfaced just under the header.
+class _QuickActionsStrip extends StatelessWidget {
+  const _QuickActionsStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <_QuickAction>[
+      _QuickAction(
+        icon: Icons.menu_book_outlined,
+        label: 'الكورسات',
+        color: AppColors.primary,
+        onTap: () {
+          // Navigate inside the home tab; the user picks a track first.
+        },
+      ),
+      _QuickAction(
+        icon: Icons.collections_bookmark_outlined,
+        label: 'الملازم',
+        color: AppColors.secondary,
+        onTap: () => GoRouter.of(context).goNamed(AppRoute.studyGuides),
+      ),
+      _QuickAction(
+        icon: Icons.person_outline_rounded,
+        label: 'المدرّسون',
+        color: const Color(0xFF7C3AED),
+        onTap: () => GoRouter.of(context).goNamed(AppRoute.teachers),
+      ),
+      _QuickAction(
+        icon: Icons.account_circle_outlined,
+        label: 'حسابي',
+        color: AppColors.accent,
+        onTap: () => GoRouter.of(context).goNamed(AppRoute.profile),
+      ),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          for (var i = 0; i < items.length; i++) ...[
+            Expanded(child: _QuickActionTile(item: items[i])),
+            if (i != items.length - 1) const SizedBox(width: 10),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAction {
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+}
+
+class _QuickActionTile extends StatelessWidget {
+  const _QuickActionTile({required this.item});
+  final _QuickAction item;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [scheme.primary, scheme.secondary],
-          begin: AlignmentDirectional.topStart,
-          end: AlignmentDirectional.bottomEnd,
-        ),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.architecture_rounded,
-                color: Colors.white,
-                size: 28,
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: item.onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(width: 10),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: item.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(item.icon, color: item.color, size: 24),
+              ),
+              const SizedBox(height: 8),
               Text(
-                'منصة المهندس',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
+                item.label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'منصة تعليمية واحدة لثلاث مراحل: الإعدادية، الكليات الهندسية، '
-            'والكليات الطبية. اختر مسارك وابدأ.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.92),
-              height: 1.5,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -152,35 +428,38 @@ class _TrackCard extends ConsumerWidget {
     final guides = ref.watch(guidesForTrackProvider(track));
 
     return Material(
-      color: Colors.transparent,
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         child: Ink(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: colors,
-              begin: AlignmentDirectional.topStart,
-              end: AlignmentDirectional.bottomEnd,
-            ),
-            borderRadius: BorderRadius.circular(22),
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: colors.last.withValues(alpha: 0.32),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+                color: AppColors.primary.withValues(alpha: 0.08),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(14),
           child: Row(
             children: [
+              // Colored thumbnail (uses the track's existing gradient so
+              // each track remains visually distinct).
               Container(
-                width: 64,
-                height: 64,
+                width: 72,
+                height: 84,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(18),
+                  gradient: LinearGradient(
+                    colors: colors,
+                    begin: AlignmentDirectional.topStart,
+                    end: AlignmentDirectional.bottomEnd,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(track.icon, color: Colors.white, size: 34),
               ),
@@ -191,8 +470,7 @@ class _TrackCard extends ConsumerWidget {
                   children: [
                     Text(
                       track.label,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -201,8 +479,8 @@ class _TrackCard extends ConsumerWidget {
                       track.tagline,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                         height: 1.4,
                       ),
                     ),
@@ -229,10 +507,10 @@ class _TrackCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 6),
-              const Icon(
+              Icon(
                 Icons.chevron_left_rounded,
-                color: Colors.white,
-                size: 28,
+                color: theme.colorScheme.onSurfaceVariant,
+                size: 26,
               ),
             ],
           ),
@@ -249,23 +527,23 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(icon, size: 14, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w700,
-              fontSize: 12,
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ],
@@ -284,18 +562,37 @@ class _AnnouncementBanner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.tertiary.withValues(alpha: 0.4),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.secondary.withValues(alpha: 0.95),
+            AppColors.primary.withValues(alpha: 0.95),
+          ],
+          begin: AlignmentDirectional.topStart,
+          end: AlignmentDirectional.bottomEnd,
         ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.campaign,
-            color: theme.colorScheme.onTertiaryContainer,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.campaign_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -305,15 +602,15 @@ class _AnnouncementBanner extends StatelessWidget {
                 Text(
                   announcement.title,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: theme.colorScheme.onTertiaryContainer,
-                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   announcement.body,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onTertiaryContainer,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.95),
                     height: 1.45,
                   ),
                 ),

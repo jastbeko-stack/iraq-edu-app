@@ -333,28 +333,28 @@ class _QuickActionsStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_QuickAction>[
       _QuickAction(
-        icon: Icons.emoji_events,
+        emoji: '🏆',
         label: 'نتائج الطلاب',
         color: const Color(0xFFFFA000),
         gradient: const [Color(0xFFFFD54F), Color(0xFFFF8F00)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.results),
       ),
       _QuickAction(
-        icon: Icons.question_answer,
+        emoji: '❓',
         label: 'اسئلة الطلاب',
         color: const Color(0xFF1FAFA8),
         gradient: const [Color(0xFF4DD0CB), Color(0xFF00897B)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.studentQuestions),
       ),
       _QuickAction(
-        icon: Icons.workspace_premium,
+        emoji: '🎓',
         label: 'محاضراتي المدفوعة',
         color: AppColors.primary,
         gradient: const [Color(0xFF4F8EE0), Color(0xFF143F76)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.paidLectures),
       ),
       _QuickAction(
-        icon: Icons.play_circle_fill,
+        emoji: '▶️',
         label: 'المحاضرات المجانية',
         color: const Color(0xFF22A06B),
         gradient: const [Color(0xFF6FCF97), Color(0xFF1F8A50)],
@@ -377,13 +377,13 @@ class _QuickActionsStrip extends StatelessWidget {
 
 class _QuickAction {
   const _QuickAction({
-    required this.icon,
+    required this.emoji,
     required this.label,
     required this.gradient,
     required this.color,
     required this.onTap,
   });
-  final IconData icon;
+  final String emoji;
   final String label;
   final Color color;
   final List<Color> gradient;
@@ -421,6 +421,7 @@ class _QuickActionTile extends StatelessWidget {
               Container(
                 width: 42,
                 height: 42,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: item.gradient,
@@ -436,7 +437,10 @@ class _QuickActionTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Icon(item.icon, color: Colors.white, size: 24),
+                child: Text(
+                  item.emoji,
+                  style: const TextStyle(fontSize: 22),
+                ),
               ),
               const SizedBox(height: 6),
               Text(

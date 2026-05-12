@@ -114,166 +114,151 @@ class _HubHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final topInset = MediaQuery.of(context).padding.top;
-    // Reserve enough space for the curved header + the overlapping search
-    // field that sits half-outside the bottom edge. The header itself grows
-    // to cover the status bar inset on mobile.
-    final headerHeight = 160 + topInset;
-    return SizedBox(
-      height: headerHeight + 36,
-      child: Stack(
-        clipBehavior: Clip.none,
+    // A single curved blue panel that hosts both the brand row and the
+    // search bar. No overlap below the header — everything is contained
+    // inside the gradient surface.
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(28),
+        ),
+      ),
+      padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 18),
+      child: Column(
         children: [
-          // Header background (gradient + curved bottom).
-          Container(
-            height: headerHeight,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryDark],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-              ),
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(28),
-              ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(16, topInset + 14, 16, 0),
-              child: Row(
-                children: [
-                  // Brand cluster — logo + title sit at the start of the
-                  // header (right-side in RTL) so they read as a unified
-                  // brand block, matching the reference design.
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.school_rounded,
-                      color: AppColors.primary,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'منصة المهندس',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          height: 1.05,
-                          fontSize: 22,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'التعليمية',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontWeight: FontWeight.w600,
-                          height: 1.1,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  _NotificationBell(),
-                  const SizedBox(width: 10),
-                  // Profile avatar (signed-in users see their avatar; others
-                  // see a neutral icon).
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final signedIn = ref.watch(isSignedInProvider);
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(99),
-                        onTap: () => context.goNamed(AppRoute.profile),
-                        child: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            signedIn
-                                ? Icons.person
-                                : Icons.person_outline_rounded,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Search field, overlapping the bottom edge of the header.
-          PositionedDirectional(
-            start: 16,
-            end: 16,
-            bottom: 0,
-            child: Material(
-              elevation: 6,
-              shadowColor: AppColors.primary.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
+          // Single-row brand strip: logo + title on the leading edge,
+          // bell + profile avatar on the trailing edge.
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsetsDirectional.only(start: 6, end: 14),
-                child: Row(
-                  children: [
-                    // Filter pill on the leading side (matches the reference
-                    // design, even though search itself is a no-op for now).
-                    Container(
-                      margin: const EdgeInsets.all(6),
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.tune_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          isCollapsed: true,
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          filled: false,
-                          hintText: 'ابحث عن كورس، ملزمة، أو مدرّس…',
-                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 14,
-                          ),
-                        ),
-                        textInputAction: TextInputAction.search,
-                      ),
-                    ),
-                    Icon(
-                      Icons.search_rounded,
-                      color: theme.colorScheme.onSurfaceVariant,
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
                     ),
                   ],
                 ),
+                child: const Icon(
+                  Icons.school_rounded,
+                  color: AppColors.primary,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'منصة المهندس',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        height: 1.05,
+                        fontSize: 20,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'التعليمية',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              _NotificationBell(),
+              const SizedBox(width: 8),
+              Consumer(
+                builder: (context, ref, _) {
+                  final signedIn = ref.watch(isSignedInProvider);
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(99),
+                    onTap: () => context.goNamed(AppRoute.profile),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        signedIn
+                            ? Icons.person
+                            : Icons.person_outline_rounded,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          // White search bar — lives INSIDE the blue header (no overlap)
+          // so the whole block reads as one cohesive piece.
+          Material(
+            color: Colors.white,
+            elevation: 0,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(start: 6, end: 14),
+              child: Row(
+                children: [
+                  // Filter pill on the leading side.
+                  Container(
+                    margin: const EdgeInsets.all(6),
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.tune_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        isCollapsed: true,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        filled: false,
+                        hintText: 'ابحث عن كورس، ملزمة، أو مدرّس…',
+                        hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                      ),
+                      textInputAction: TextInputAction.search,
+                    ),
+                  ),
+                  Icon(
+                    Icons.search_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
             ),
           ),

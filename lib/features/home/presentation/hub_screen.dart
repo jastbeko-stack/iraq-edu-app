@@ -213,13 +213,14 @@ class _HubHeader extends ConsumerWidget {
           const SizedBox(height: 14),
           // White search bar — lives INSIDE the blue header (no overlap)
           // so the whole block reads as one cohesive piece.
-          Material(
-            color: Colors.white,
-            elevation: 0,
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsetsDirectional.only(start: 6, end: 14),
-              child: Row(
+          Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsetsDirectional.only(start: 6, end: 14),
+            child: Row(
                 children: [
                   // Filter pill on the leading side.
                   Container(
@@ -261,7 +262,6 @@ class _HubHeader extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
           ),
         ],
       ),

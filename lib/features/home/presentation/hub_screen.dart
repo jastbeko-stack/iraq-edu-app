@@ -333,28 +333,28 @@ class _QuickActionsStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_QuickAction>[
       _QuickAction(
-        icon: Icons.emoji_events_rounded,
+        icon: Icons.emoji_events,
         label: 'نتائج الطلاب',
         color: const Color(0xFFFFA000),
         gradient: const [Color(0xFFFFD54F), Color(0xFFFF8F00)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.results),
       ),
       _QuickAction(
-        icon: Icons.question_answer_rounded,
+        icon: Icons.question_answer,
         label: 'اسئلة الطلاب',
         color: const Color(0xFF1FAFA8),
         gradient: const [Color(0xFF4DD0CB), Color(0xFF00897B)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.studentQuestions),
       ),
       _QuickAction(
-        icon: Icons.workspace_premium_rounded,
+        icon: Icons.workspace_premium,
         label: 'محاضراتي المدفوعة',
         color: AppColors.primary,
         gradient: const [Color(0xFF4F8EE0), Color(0xFF143F76)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.paidLectures),
       ),
       _QuickAction(
-        icon: Icons.play_circle_filled_rounded,
+        icon: Icons.play_circle_fill,
         label: 'المحاضرات المجانية',
         color: const Color(0xFF22A06B),
         gradient: const [Color(0xFF6FCF97), Color(0xFF1F8A50)],

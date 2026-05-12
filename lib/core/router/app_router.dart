@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../features/admin/data/admin_auth.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/admin/presentation/admin_login_screen.dart';
+import '../../features/auth/data/auth_controller.dart';
+import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/coming_soon/presentation/coming_soon_screen.dart';
 import '../../features/courses/presentation/course_details_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -29,6 +31,7 @@ abstract final class AppRoute {
   static const lessonPlayer = 'lesson-player';
   static const questions = 'questions';
   static const calendar = 'calendar';
+  static const welcome = 'welcome';
   static const adminLogin = 'admin-login';
   static const adminDashboard = 'admin-dashboard';
 }
@@ -41,18 +44,47 @@ abstract final class AppRoute {
 /// shell remains visible only on top-level routes.
 final routerProvider = Provider<GoRouter>(buildRouter);
 
+/// Bridges Riverpod state changes to a [Listenable] that GoRouter can use
+/// via its `refreshListenable` to re-run redirects when the user signs in
+/// or out.
+class _AuthRefreshNotifier extends ChangeNotifier {
+  _AuthRefreshNotifier(Ref ref) {
+    ref.listen<bool>(isSignedInProvider, (_, _) => notifyListeners());
+  }
+}
+
 GoRouter buildRouter(Ref ref) {
+  final refreshNotifier = _AuthRefreshNotifier(ref);
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
       final loc = state.matchedLocation;
       final isAdminLoggedIn = ref.read(adminAuthProvider);
+      final isSignedIn = ref.read(isSignedInProvider);
+
+      // Admin portal has its own auth gate.
       final goingToAdmin = loc.startsWith('/admin') && loc != '/admin/login';
       if (goingToAdmin && !isAdminLoggedIn) return '/admin/login';
       if (loc == '/admin/login' && isAdminLoggedIn) return '/admin';
+
+      // Student-facing app: the welcome / sign-in screen is the gate.
+      // Anything inside the shell requires a Supabase session. Once signed
+      // in, /welcome itself bounces back to the Hub.
+      final goingToWelcome = loc == '/welcome';
+      final goingToAdminArea = loc.startsWith('/admin');
+      if (!isSignedIn && !goingToWelcome && !goingToAdminArea) {
+        return '/welcome';
+      }
+      if (isSignedIn && goingToWelcome) return '/';
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/welcome',
+        name: AppRoute.welcome,
+        builder: (context, state) => const WelcomeScreen(),
+      ),
       GoRoute(
         path: '/admin/login',
         name: AppRoute.adminLogin,

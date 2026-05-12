@@ -147,6 +147,30 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  /// Sign in with Google via Supabase OAuth.
+  ///
+  /// On web this performs a full-page redirect to Google's consent screen
+  /// and back to the app, after which Supabase fires `onAuthStateChange`
+  /// with the new session. On native platforms this opens an in-app browser.
+  /// The Google provider must be enabled in the Supabase dashboard under
+  /// Authentication → Providers.
+  Future<void> signInWithGoogle() async {
+    try {
+      await _client!.auth.signInWithOAuth(
+        supa.OAuthProvider.google,
+        // Redirect back to the same origin on web so we land on the Hub.
+        redirectTo: null,
+      );
+    } on supa.AuthException catch (e) {
+      state = AuthError(message: _arabicError(e), previous: state);
+    } catch (e) {
+      state = AuthError(
+        message: 'تعذر تسجيل الدخول بـ Google. حاول مرة أخرى.',
+        previous: state,
+      );
+    }
+  }
+
   Future<void> signOut() async {
     try {
       await _client!.auth.signOut();

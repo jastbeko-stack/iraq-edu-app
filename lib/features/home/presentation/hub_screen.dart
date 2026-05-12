@@ -119,10 +119,14 @@ class _HubHeader extends ConsumerWidget {
     // inside the gradient surface.
     return Container(
       decoration: const BoxDecoration(
+        // Solid primary colour at the very top edge so the browser/OS
+        // chrome (themed to AppColors.primary via index.html) blends in
+        // seamlessly. The subtle vertical gradient adds depth without
+        // changing the colour at the very top.
         gradient: LinearGradient(
           colors: [AppColors.primary, AppColors.primaryDark],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.vertical(
           bottom: Radius.circular(28),

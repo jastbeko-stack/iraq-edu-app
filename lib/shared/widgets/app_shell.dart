@@ -56,13 +56,13 @@ class AppShell extends StatelessWidget {
               borderRadius: BorderRadius.circular(36),
               child: BackdropFilter(
                 // Strong iOS-style frosted-glass blur.
-                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.10),
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(36),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.30),
+                      color: Colors.white.withValues(alpha: 0.25),
                       width: 0.6,
                     ),
                     boxShadow: [
@@ -94,7 +94,7 @@ class AppShell extends StatelessWidget {
                               selected ? FontWeight.w800 : FontWeight.w600,
                           color: selected
                               ? AppColors.primary
-                              : Colors.black87,
+                              : Colors.white.withValues(alpha: 0.88),
                         );
                       }),
                       iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -103,7 +103,7 @@ class AppShell extends StatelessWidget {
                         return IconThemeData(
                           color: selected
                               ? AppColors.primary
-                              : Colors.black87,
+                              : Colors.white.withValues(alpha: 0.88),
                           size: 24,
                         );
                       }),

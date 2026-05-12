@@ -38,7 +38,18 @@ class HubScreen extends ConsumerWidget {
           padding: EdgeInsets.zero,
           children: [
             const _HubHeader(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            // 4-section top strip for signed-in students: results,
+            // student Q&A, paid lectures, free lectures.
+            Consumer(
+              builder: (context, ref, _) {
+                if (!ref.watch(isSignedInProvider)) {
+                  return const SizedBox.shrink();
+                }
+                return const _StudentTopSections();
+              },
+            ),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Consumer(
@@ -319,6 +330,124 @@ class _NotificationBell extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Horizontal 4-section strip shown to signed-in students directly under
+/// the brand header: results, student Q&A, paid lectures, free lectures.
+///
+/// Each chip routes to a dedicated screen inside the home branch so the
+/// bottom navigation remains visible.
+class _StudentTopSections extends StatelessWidget {
+  const _StudentTopSections();
+
+  @override
+  Widget build(BuildContext context) {
+    final sections = <_TopSection>[
+      _TopSection(
+        label: 'نتائج الطلاب',
+        icon: Icons.emoji_events_outlined,
+        color: AppColors.accent,
+        path: '/results',
+      ),
+      _TopSection(
+        label: 'اسئلة الطلاب',
+        icon: Icons.forum_outlined,
+        color: AppColors.secondary,
+        path: '/student-questions',
+      ),
+      _TopSection(
+        label: 'محاضراتي المدفوعة',
+        icon: Icons.workspace_premium_outlined,
+        color: AppColors.primary,
+        path: '/paid-lectures',
+      ),
+      _TopSection(
+        label: 'المحاضرات المجانية',
+        icon: Icons.play_circle_outline,
+        color: AppColors.success,
+        path: '/free-lectures',
+      ),
+    ];
+    return SizedBox(
+      height: 96,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: sections.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, i) => _StudentTopSectionCard(section: sections[i]),
+      ),
+    );
+  }
+}
+
+class _TopSection {
+  const _TopSection({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.path,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final String path;
+}
+
+class _StudentTopSectionCard extends StatelessWidget {
+  const _StudentTopSectionCard({required this.section});
+
+  final _TopSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => context.go(section.path),
+      child: Container(
+        width: 130,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: section.color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: Icon(section.icon, color: section.color, size: 20),
+            ),
+            Text(
+              section.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                height: 1.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

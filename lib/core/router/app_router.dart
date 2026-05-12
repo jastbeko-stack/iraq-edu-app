@@ -32,6 +32,10 @@ abstract final class AppRoute {
   static const questions = 'questions';
   static const calendar = 'calendar';
   static const welcome = 'welcome';
+  static const results = 'results';
+  static const studentQuestions = 'student-questions';
+  static const paidLectures = 'paid-lectures';
+  static const freeLectures = 'free-lectures';
   static const adminLogin = 'admin-login';
   static const adminDashboard = 'admin-dashboard';
 }
@@ -125,6 +129,46 @@ GoRouter buildRouter(Ref ref) {
                     name: AppRoute.teacherProfile,
                     builder: (context, state) => TeacherProfileScreen(
                       teacherId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'results',
+                    name: AppRoute.results,
+                    builder: (context, state) => const ComingSoonScreen(
+                      title: 'نتائج الطلاب',
+                      icon: Icons.emoji_events_outlined,
+                      description:
+                          'لوحة المتصدّرين ونتائج الطلاب في الامتحانات — قريباً.',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'student-questions',
+                    name: AppRoute.studentQuestions,
+                    builder: (context, state) => const ComingSoonScreen(
+                      title: 'اسئلة الطلاب',
+                      icon: Icons.forum_outlined,
+                      description:
+                          'مجتمع الأسئلة والأجوبة بين الطلاب والمدرّسين — قريباً.',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'paid-lectures',
+                    name: AppRoute.paidLectures,
+                    builder: (context, state) => const ComingSoonScreen(
+                      title: 'محاضراتي المدفوعة',
+                      icon: Icons.workspace_premium_outlined,
+                      description:
+                          'كل المحاضرات اللي فعّلتها بكوبون أو دفعت ثمنها — قريباً.',
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'free-lectures',
+                    name: AppRoute.freeLectures,
+                    builder: (context, state) => const ComingSoonScreen(
+                      title: 'المحاضرات المجانية',
+                      icon: Icons.play_circle_outline,
+                      description:
+                          'المحاضرات المجانية المتاحة لكل الطلاب — قريباً.',
                     ),
                   ),
                   GoRoute(

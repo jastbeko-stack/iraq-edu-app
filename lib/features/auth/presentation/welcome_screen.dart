@@ -161,7 +161,31 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         color: Colors.white70,
                       ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 22),
+                    // Role picker: student (stays on this screen) vs teacher
+                    // (jumps to the admin / teacher portal).
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _RoleCard(
+                            icon: Icons.person_outline,
+                            label: 'طالب',
+                            selected: true,
+                            onTap: () {},
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _RoleCard(
+                            icon: Icons.cast_for_education_outlined,
+                            label: 'تدريسي',
+                            selected: false,
+                            onTap: () => context.go('/admin/login'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 22),
                     // Step indicator
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -480,6 +504,66 @@ class _DarkField extends StatelessWidget {
             vertical: 16,
             horizontal: 8,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Top-of-screen role selector card. The student card is "selected" by
+/// default — the rest of this screen IS the student sign-in flow. Tapping
+/// the teacher card jumps to the dedicated admin / teacher portal.
+class _RoleCard extends StatelessWidget {
+  const _RoleCard({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.22)
+              : const Color(0xFF111A2A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected
+                ? AppColors.primaryLight
+                : Colors.white12,
+            width: selected ? 1.4 : 0.8,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 26,
+              color: selected ? AppColors.primaryLight : Colors.white70,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: selected ? Colors.white : Colors.white70,
+              ),
+            ),
+          ],
         ),
       ),
     );

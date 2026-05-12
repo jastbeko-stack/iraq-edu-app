@@ -347,7 +347,7 @@ class _QuickActionsStrip extends StatelessWidget {
         onTap: () => GoRouter.of(context).goNamed(AppRoute.studentQuestions),
       ),
       _QuickAction(
-        emoji: '🎓',
+        emoji: '💎',
         label: 'محاضراتي المدفوعة',
         color: AppColors.primary,
         gradient: const [Color(0xFF4F8EE0), Color(0xFF143F76)],

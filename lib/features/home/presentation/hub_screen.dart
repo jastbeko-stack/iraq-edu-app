@@ -130,6 +130,7 @@ class _HubHeader extends ConsumerWidget {
       ),
       padding: EdgeInsets.fromLTRB(16, topInset + 12, 16, 18),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Single-row brand strip: logo + title on the leading edge,
           // bell + profile avatar on the trailing edge.

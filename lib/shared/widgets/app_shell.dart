@@ -59,16 +59,16 @@ class AppShell extends StatelessWidget {
                 filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.32),
+                    color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(36),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.45),
-                      width: 0.8,
+                      color: Colors.white.withValues(alpha: 0.35),
+                      width: 0.6,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 18,
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
                     ],
@@ -82,7 +82,7 @@ class AppShell extends StatelessWidget {
                       // Dark translucent pill behind the active destination,
                       // matching the reference screenshot.
                       indicatorColor:
-                          AppColors.primary.withValues(alpha: 0.30),
+                          AppColors.primary.withValues(alpha: 0.18),
                       indicatorShape: const StadiumBorder(),
                       labelTextStyle:
                           WidgetStateProperty.resolveWith((states) {

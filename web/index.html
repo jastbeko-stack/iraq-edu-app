@@ -25,10 +25,10 @@
   <meta name="description" content="منصة المهندس التعليمية — منصة تعليمية للطلاب في العراق.">
 
   <!-- Tints the browser/OS chrome (status bar on Chrome Android, address bar
-       on iOS Safari 15+) to the brand red so the system bar blends into the
-       AppBar instead of showing an opaque white strip. -->
-  <meta name="theme-color" content="#CE1126" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#101114" media="(prefers-color-scheme: dark)">
+       on iOS Safari 15+) to the royal-blue brand color so the system bar
+       blends into the curved header instead of showing a contrasting strip. -->
+  <meta name="theme-color" content="#1E5BA8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1E5BA8" media="(prefers-color-scheme: dark)">
 
   <!-- iOS / PWA meta tags -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -46,16 +46,14 @@
   <link rel="manifest" href="manifest.json">
 
   <style>
-    /* Paint the body with the brand color so the area behind the iOS status
-       bar (which is now translucent) is the same red as the AppBar — no white
-       gap at the top. Flutter's canvas paints over this once it boots. */
+    /* Paint the body with the royal-blue brand color so the area behind the
+       iOS status bar / Safari chrome (which is translucent) blends into the
+       curved hub header — no contrasting strip at the top. Flutter's canvas
+       paints over this once it boots. */
     html, body {
       margin: 0;
       padding: 0;
-      background-color: #CE1126;
-    }
-    @media (prefers-color-scheme: dark) {
-      html, body { background-color: #101114; }
+      background-color: #1E5BA8;
     }
   </style>
 </head>

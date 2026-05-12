@@ -47,82 +47,111 @@ class AppShell extends StatelessWidget {
         // "watery" glass effect can pick up the content scrolling beneath it.
         extendBody: true,
         body: navigationShell,
-        bottomNavigationBar: ClipRect(
-          child: BackdropFilter(
-            // Frosted-glass blur: lifts the content below the bar slightly
-            // so the bar reads as a translucent "watery" surface.
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                // Light teal/blue tint with low alpha so the underlying page
-                // bleeds through, giving the bar a watery look.
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.55),
-                    AppColors.primary.withValues(alpha: 0.18),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.35),
-                    width: 0.6,
+        bottomNavigationBar: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.only(bottom: 10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(36),
+              child: BackdropFilter(
+                // Strong iOS-style frosted-glass blur.
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.32),
+                    borderRadius: BorderRadius.circular(36),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      width: 0.8,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              child: NavigationBarTheme(
-                data: NavigationBarThemeData(
-                  backgroundColor: Colors.transparent,
-                  surfaceTintColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  elevation: 0,
-                  indicatorColor:
-                      AppColors.primary.withValues(alpha: 0.18),
-                ),
-                child: NavigationBar(
-                  backgroundColor: Colors.transparent,
-                  surfaceTintColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  elevation: 0,
-                  selectedIndex: navigationShell.currentIndex,
-                  onDestinationSelected: (index) => navigationShell.goBranch(
-                    index,
-                    // Re-tap on the active tab pops to the root of that
-                    // tab's stack.
-                    initialLocation:
-                        index == navigationShell.currentIndex,
+                  child: NavigationBarTheme(
+                    data: NavigationBarThemeData(
+                      backgroundColor: Colors.transparent,
+                      surfaceTintColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      elevation: 0,
+                      // Dark translucent pill behind the active destination,
+                      // matching the reference screenshot.
+                      indicatorColor:
+                          AppColors.primary.withValues(alpha: 0.30),
+                      indicatorShape: const StadiumBorder(),
+                      labelTextStyle:
+                          WidgetStateProperty.resolveWith((states) {
+                        final selected =
+                            states.contains(WidgetState.selected);
+                        return TextStyle(
+                          fontSize: 12,
+                          fontWeight:
+                              selected ? FontWeight.w800 : FontWeight.w600,
+                          color: selected
+                              ? AppColors.primary
+                              : Colors.black87,
+                        );
+                      }),
+                      iconTheme: WidgetStateProperty.resolveWith((states) {
+                        final selected =
+                            states.contains(WidgetState.selected);
+                        return IconThemeData(
+                          color: selected
+                              ? AppColors.primary
+                              : Colors.black87,
+                          size: 24,
+                        );
+                      }),
+                    ),
+                    child: NavigationBar(
+                      backgroundColor: Colors.transparent,
+                      surfaceTintColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      elevation: 0,
+                      height: 68,
+                      selectedIndex: navigationShell.currentIndex,
+                      onDestinationSelected: (index) =>
+                          navigationShell.goBranch(
+                        index,
+                        initialLocation:
+                            index == navigationShell.currentIndex,
+                      ),
+                      // RTL order (right → left): الرئيسية, المواد,
+                      // الأسئلة, التقويم, حسابي.
+                      destinations: const [
+                        NavigationDestination(
+                          icon: Icon(Icons.home_outlined),
+                          selectedIcon: Icon(Icons.home),
+                          label: 'الرئيسية',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.menu_book_outlined),
+                          selectedIcon: Icon(Icons.menu_book),
+                          label: 'المواد',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.quiz_outlined),
+                          selectedIcon: Icon(Icons.quiz),
+                          label: 'الأسئلة',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.calendar_month_outlined),
+                          selectedIcon: Icon(Icons.calendar_month),
+                          label: 'التقويم',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.person_outline),
+                          selectedIcon: Icon(Icons.person),
+                          label: 'حسابي',
+                        ),
+                      ],
+                    ),
                   ),
-                  // RTL order (right → left): الرئيسية, المواد, الأسئلة,
-                  // التقويم, حسابي. The first destination renders on the
-                  // right edge in an RTL Directionality.
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home),
-                      label: 'الرئيسية',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.menu_book_outlined),
-                      selectedIcon: Icon(Icons.menu_book),
-                      label: 'المواد',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.quiz_outlined),
-                      selectedIcon: Icon(Icons.quiz),
-                      label: 'الأسئلة',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.calendar_month_outlined),
-                      selectedIcon: Icon(Icons.calendar_month),
-                      label: 'التقويم',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.person_outline),
-                      selectedIcon: Icon(Icons.person),
-                      label: 'حسابي',
-                    ),
-                  ],
                 ),
               ),
             ),

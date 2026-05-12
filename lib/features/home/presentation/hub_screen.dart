@@ -333,27 +333,31 @@ class _QuickActionsStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_QuickAction>[
       _QuickAction(
-        icon: Icons.emoji_events_outlined,
+        icon: Icons.emoji_events_rounded,
         label: 'نتائج الطلاب',
-        color: AppColors.accent,
+        color: const Color(0xFFFFA000),
+        gradient: const [Color(0xFFFFD54F), Color(0xFFFF8F00)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.results),
       ),
       _QuickAction(
-        icon: Icons.forum_outlined,
+        icon: Icons.question_answer_rounded,
         label: 'اسئلة الطلاب',
-        color: AppColors.secondary,
+        color: const Color(0xFF1FAFA8),
+        gradient: const [Color(0xFF4DD0CB), Color(0xFF00897B)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.studentQuestions),
       ),
       _QuickAction(
-        icon: Icons.workspace_premium_outlined,
+        icon: Icons.workspace_premium_rounded,
         label: 'محاضراتي المدفوعة',
         color: AppColors.primary,
+        gradient: const [Color(0xFF4F8EE0), Color(0xFF143F76)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.paidLectures),
       ),
       _QuickAction(
-        icon: Icons.play_circle_outline,
+        icon: Icons.play_circle_filled_rounded,
         label: 'المحاضرات المجانية',
-        color: AppColors.success,
+        color: const Color(0xFF22A06B),
+        gradient: const [Color(0xFF6FCF97), Color(0xFF1F8A50)],
         onTap: () => GoRouter.of(context).goNamed(AppRoute.freeLectures),
       ),
     ];
@@ -375,12 +379,14 @@ class _QuickAction {
   const _QuickAction({
     required this.icon,
     required this.label,
+    required this.gradient,
     required this.color,
     required this.onTap,
   });
   final IconData icon;
   final String label;
   final Color color;
+  final List<Color> gradient;
   final VoidCallback onTap;
 }
 
@@ -413,13 +419,24 @@ class _QuickActionTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  color: item.color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: item.gradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: item.color.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: Icon(item.icon, color: item.color, size: 20),
+                child: Icon(item.icon, color: Colors.white, size: 24),
               ),
               const SizedBox(height: 6),
               Text(

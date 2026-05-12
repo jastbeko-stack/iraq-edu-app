@@ -458,14 +458,21 @@ class _QuickActionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Text(
-                item.label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
+              // Reserve a fixed 2-line height so the outer tile height is
+              // identical regardless of whether the label wraps (e.g.
+              // "محاضراتي المدفوعة" wraps to two lines while the others
+              // fit on one).
+              SizedBox(
+                height: 30,
+                child: Text(
+                  item.label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
+                  ),
                 ),
               ),
             ],

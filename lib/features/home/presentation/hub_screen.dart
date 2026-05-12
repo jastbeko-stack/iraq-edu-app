@@ -431,9 +431,9 @@ class _QuickActionTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: item.color.withValues(alpha: 0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
@@ -441,8 +441,8 @@ class _QuickActionTile extends StatelessWidget {
                 // logos line up at a consistent size regardless of the
                 // emoji's intrinsic metrics (e.g. ❓ vs 🏆).
                 child: SizedBox(
-                  width: 26,
-                  height: 26,
+                  width: 22,
+                  height: 22,
                   child: FittedBox(
                     fit: BoxFit.contain,
                     alignment: Alignment.center,

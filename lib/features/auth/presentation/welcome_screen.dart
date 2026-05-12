@@ -434,8 +434,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       'حقوق الطبع والنشر © 2024 - 2025',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white54,
                       ),
                     ),
                     const SizedBox(height: 2),

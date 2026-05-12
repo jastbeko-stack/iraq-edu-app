@@ -44,7 +44,7 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: isLight
           ? AppColors.surfaceLight
           : AppColors.surfaceDark,
-      splashFactory: InkSparkle.splashFactory,
+      splashFactory: InkRipple.splashFactory,
     );
 
     return base.copyWith(
@@ -246,17 +246,17 @@ abstract final class AppTheme {
   }
 }
 
-/// Drop-in [PageTransitionsBuilder] that fades the incoming route in over a
-/// very short duration (~120ms) — gives the app a near-instant, snappy feel
-/// while still avoiding a jarring hard cut between screens.
+/// Drop-in [PageTransitionsBuilder] that performs zero-duration page changes
+/// — the new route is shown instantly without a fade/slide, giving the app
+/// a native-feeling, instant navigation between screens.
 class _FastFadeTransitionsBuilder extends PageTransitionsBuilder {
   const _FastFadeTransitionsBuilder();
 
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 120);
+  Duration get transitionDuration => Duration.zero;
 
   @override
-  Duration get reverseTransitionDuration => const Duration(milliseconds: 100);
+  Duration get reverseTransitionDuration => Duration.zero;
 
   @override
   Widget buildTransitions<T>(

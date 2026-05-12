@@ -229,7 +229,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
+                      duration: const Duration(milliseconds: 100),
                       child: _step == 0
                           ? _DarkField(
                               key: const ValueKey('email'),

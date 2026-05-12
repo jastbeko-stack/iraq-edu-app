@@ -437,9 +437,24 @@ class _QuickActionTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Text(
-                  item.emoji,
-                  style: const TextStyle(fontSize: 22),
+                // Force every emoji to occupy the same visual area so the
+                // logos line up at a consistent size regardless of the
+                // emoji's intrinsic metrics (e.g. ❓ vs 🏆).
+                child: SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
+                    child: Text(
+                      item.emoji,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 28,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 6),

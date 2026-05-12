@@ -9,6 +9,7 @@ import 'app_colors.dart';
 /// The palette is anchored on a deep royal blue with a teal secondary,
 /// inspired by polished Arabic edtech platforms. Cards use soft shadows
 /// instead of borders for a calmer, more "premium" feel.
+// ignore_for_file: lines_longer_than_80_chars
 abstract final class AppTheme {
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
@@ -229,6 +230,42 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
       ),
+      // Snappy 120ms cross-fade on every platform for navigations pushed via
+      // MaterialPage (which is what GoRouter wraps every `builder:` with).
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: _FastFadeTransitionsBuilder(),
+          TargetPlatform.iOS: _FastFadeTransitionsBuilder(),
+          TargetPlatform.macOS: _FastFadeTransitionsBuilder(),
+          TargetPlatform.windows: _FastFadeTransitionsBuilder(),
+          TargetPlatform.linux: _FastFadeTransitionsBuilder(),
+          TargetPlatform.fuchsia: _FastFadeTransitionsBuilder(),
+        },
+      ),
     );
+  }
+}
+
+/// Drop-in [PageTransitionsBuilder] that fades the incoming route in over a
+/// very short duration (~120ms) — gives the app a near-instant, snappy feel
+/// while still avoiding a jarring hard cut between screens.
+class _FastFadeTransitionsBuilder extends PageTransitionsBuilder {
+  const _FastFadeTransitionsBuilder();
+
+  @override
+  Duration get transitionDuration => const Duration(milliseconds: 120);
+
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 100);
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(opacity: animation, child: child);
   }
 }

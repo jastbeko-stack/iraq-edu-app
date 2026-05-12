@@ -283,40 +283,53 @@ class _HubHeader extends ConsumerWidget {
   }
 }
 
-/// Notification bell with an unread indicator dot.
+/// Notification bell with an unread count badge.
+///
+/// Painted directly on the header (no background pill) so the bell matches
+/// the reference design's clean look.
 class _NotificationBell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: const Icon(
-            Icons.notifications_outlined,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
-        PositionedDirectional(
-          top: 8,
-          end: 8,
-          child: Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: AppColors.danger,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primary, width: 1.5),
+    return SizedBox(
+      width: 36,
+      height: 36,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Align(
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.notifications_outlined,
+              color: Colors.white,
+              size: 28,
             ),
           ),
-        ),
-      ],
+          PositionedDirectional(
+            top: 0,
+            end: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              decoration: BoxDecoration(
+                color: AppColors.danger,
+                shape: BoxShape.rectangle,
+                borderRadius: BorderRadius.circular(99),
+                border: Border.all(color: AppColors.primary, width: 1.5),
+              ),
+              alignment: Alignment.center,
+              child: const Text(
+                '٣',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

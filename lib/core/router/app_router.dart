@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/admin/data/admin_auth.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/admin/presentation/admin_login_screen.dart';
+import '../../features/coming_soon/presentation/coming_soon_screen.dart';
 import '../../features/courses/presentation/course_details_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/lessons/presentation/lesson_player_screen.dart';
@@ -26,6 +27,8 @@ abstract final class AppRoute {
   static const teacherProfileFromTab = 'teacher-profile-from-tab';
   static const courseDetails = 'course-details';
   static const lessonPlayer = 'lesson-player';
+  static const questions = 'questions';
+  static const calendar = 'calendar';
   static const adminLogin = 'admin-login';
   static const adminDashboard = 'admin-dashboard';
 }
@@ -71,6 +74,20 @@ GoRouter buildRouter(Ref ref) {
                 name: AppRoute.home,
                 builder: (context, state) => const HomeScreen(),
                 routes: [
+                  GoRoute(
+                    path: 'teachers',
+                    name: AppRoute.teachers,
+                    builder: (context, state) => const TeachersListScreen(),
+                    routes: [
+                      GoRoute(
+                        path: ':id',
+                        name: AppRoute.teacherProfileFromTab,
+                        builder: (context, state) => TeacherProfileScreen(
+                          teacherId: state.pathParameters['id']!,
+                        ),
+                      ),
+                    ],
+                  ),
                   GoRoute(
                     path: 'teacher/:id',
                     name: AppRoute.teacherProfile,
@@ -120,18 +137,28 @@ GoRouter buildRouter(Ref ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/teachers',
-                name: AppRoute.teachers,
-                builder: (context, state) => const TeachersListScreen(),
-                routes: [
-                  GoRoute(
-                    path: ':id',
-                    name: AppRoute.teacherProfileFromTab,
-                    builder: (context, state) => TeacherProfileScreen(
-                      teacherId: state.pathParameters['id']!,
-                    ),
-                  ),
-                ],
+                path: '/questions',
+                name: AppRoute.questions,
+                builder: (context, state) => const ComingSoonScreen(
+                  title: 'الأسئلة',
+                  icon: Icons.help_outline_rounded,
+                  description:
+                      'بنك أسئلة الامتحانات الوزارية مع الأجوبة — قريباً.',
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/calendar',
+                name: AppRoute.calendar,
+                builder: (context, state) => const ComingSoonScreen(
+                  title: 'التقويم',
+                  icon: Icons.calendar_month_rounded,
+                  description:
+                      'مواعيد الحصص والامتحانات والملازم الجديدة — قريباً.',
+                ),
               ),
             ],
           ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-/// Bottom-navigation shell that hosts the four top-level tabs.
+/// Bottom-navigation shell that hosts the five top-level tabs.
 ///
 /// Each tab is its own `StatefulShellBranch`, so its navigation stack is
 /// preserved across tab switches.
@@ -47,6 +47,9 @@ class AppShell extends StatelessWidget {
             // Re-tap on the active tab pops to the root of that tab's stack.
             initialLocation: index == navigationShell.currentIndex,
           ),
+          // RTL order (right → left): الرئيسية, المواد, الأسئلة, التقويم, حسابي.
+          // In an RTL Directionality, the first destination is rendered on
+          // the right edge, so the visual order below matches the spec.
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_outlined),
@@ -54,14 +57,19 @@ class AppShell extends StatelessWidget {
               label: 'الرئيسية',
             ),
             NavigationDestination(
-              icon: Icon(Icons.collections_bookmark_outlined),
-              selectedIcon: Icon(Icons.collections_bookmark),
-              label: 'الملازم',
+              icon: Icon(Icons.menu_book_outlined),
+              selectedIcon: Icon(Icons.menu_book),
+              label: 'المواد',
             ),
             NavigationDestination(
-              icon: Icon(Icons.school_outlined),
-              selectedIcon: Icon(Icons.school),
-              label: 'المدرسون',
+              icon: Icon(Icons.quiz_outlined),
+              selectedIcon: Icon(Icons.quiz),
+              label: 'الأسئلة',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month),
+              label: 'التقويم',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),

@@ -450,8 +450,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       'تم التطوير بواسطة المهندس علي لؤي',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                        color: Colors.white54,
                       ),
                     ),
                   ],

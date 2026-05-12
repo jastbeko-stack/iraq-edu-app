@@ -140,36 +140,32 @@ class _HubHeader extends ConsumerWidget {
               padding: EdgeInsets.fromLTRB(16, topInset + 14, 16, 0),
               child: Row(
                 children: [
-                  // Profile avatar (signed-in users see their avatar; others
-                  // see a neutral icon).
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final signedIn = ref.watch(isSignedInProvider);
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(99),
-                        onTap: () => context.goNamed(AppRoute.profile),
-                        child: CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.white,
-                          child: Icon(
-                            signedIn
-                                ? Icons.person
-                                : Icons.person_outline_rounded,
-                            color: AppColors.primary,
-                          ),
+                  // Brand cluster — logo + title sit at the start of the
+                  // header (right-side in RTL) so they read as a unified
+                  // brand block, matching the reference design.
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
-                      );
-                    },
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.school_rounded,
+                      color: AppColors.primary,
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 10),
-                  _NotificationBell(),
-                  const Spacer(),
-                  // Brand: title above tagline, sitting directly next to the
-                  // circular logo badge on the leading (right-side in RTL)
-                  // edge of the header. Keeping them flush mirrors the
-                  // reference design.
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'منصة المهندس',
@@ -192,26 +188,29 @@ class _HubHeader extends ConsumerWidget {
                       ),
                     ],
                   ),
+                  const Spacer(),
+                  _NotificationBell(),
                   const SizedBox(width: 10),
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
+                  // Profile avatar (signed-in users see their avatar; others
+                  // see a neutral icon).
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final signedIn = ref.watch(isSignedInProvider);
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(99),
+                        onTap: () => context.goNamed(AppRoute.profile),
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            signedIn
+                                ? Icons.person
+                                : Icons.person_outline_rounded,
+                            color: AppColors.primary,
+                          ),
                         ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.school_rounded,
-                      color: AppColors.primary,
-                      size: 28,
-                    ),
+                      );
+                    },
                   ),
                 ],
               ),

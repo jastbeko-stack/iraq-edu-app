@@ -215,57 +215,51 @@ class _HubHeader extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 14),
-          // White search bar — lives INSIDE the blue header (no overlap)
-          // so the whole block reads as one cohesive piece.
-          Container(
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.white,
+          // White search bar — tapping anywhere opens the dedicated global
+          // search screen with autofocused input.
+          Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
               borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsetsDirectional.only(start: 6, end: 14),
-            child: Row(
-                children: [
-                  // Filter pill on the leading side.
-                  Container(
-                    margin: const EdgeInsets.all(6),
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary,
-                      borderRadius: BorderRadius.circular(10),
+              onTap: () => context.goNamed(AppRoute.search),
+              child: Container(
+                height: 52,
+                padding: const EdgeInsetsDirectional.only(start: 6, end: 14),
+                child: Row(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.all(6),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.tune_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.tune_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration(
-                        isCollapsed: true,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        filled: false,
-                        hintText: 'ابحث عن كورس، ملزمة، أو مدرّس…',
-                        hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 12,
+                    const Expanded(
+                      child: Text(
+                        'ابحث عن كورس، ملزمة، أو مدرّس…',
+                        style: TextStyle(
+                          color: Color(0xFF334155),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      textInputAction: TextInputAction.search,
                     ),
-                  ),
-                  Icon(
-                    Icons.search_rounded,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
+                    const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF1E5BA8),
+                    ),
+                  ],
+                ),
               ),
+            ),
           ),
         ],
       ),

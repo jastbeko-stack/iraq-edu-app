@@ -12,6 +12,7 @@ import '../../features/courses/presentation/course_details_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/lessons/presentation/lesson_player_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/search/presentation/global_search_screen.dart';
 import '../../features/study_guides/presentation/study_guide_details_screen.dart';
 import '../../features/study_guides/presentation/study_guides_store_screen.dart';
 import '../../features/teachers/presentation/teacher_profile_screen.dart';
@@ -32,6 +33,7 @@ abstract final class AppRoute {
   static const questions = 'questions';
   static const calendar = 'calendar';
   static const welcome = 'welcome';
+  static const search = 'search';
   static const results = 'results';
   static const studentQuestions = 'student-questions';
   static const paidLectures = 'paid-lectures';
@@ -98,6 +100,11 @@ GoRouter buildRouter(Ref ref) {
         path: '/admin',
         name: AppRoute.adminDashboard,
         builder: (context, state) => const AdminDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/search',
+        name: AppRoute.search,
+        builder: (context, state) => const GlobalSearchScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

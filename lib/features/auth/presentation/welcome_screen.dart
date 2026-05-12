@@ -445,6 +445,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         color: AppColors.primaryLight,
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'تم التطوير بواسطة المهندس علي لؤي',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),

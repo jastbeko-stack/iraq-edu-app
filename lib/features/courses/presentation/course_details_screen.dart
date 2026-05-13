@@ -8,6 +8,8 @@ import '../../../shared/models/sample_data.dart';
 import '../../admin/data/catalog_store.dart';
 import '../../coupons/data/coupon_repository.dart';
 import '../../coupons/presentation/coupon_redemption_sheet.dart';
+import '../../lessons/data/lessons_service.dart';
+import '../../lessons/domain/lesson.dart' as remote_lesson;
 
 /// Detail view for a single course: cover, description, lessons list, and
 /// CTAs for enrolling or redeeming a coupon.
@@ -35,7 +37,11 @@ class CourseDetailsScreen extends ConsumerWidget {
     // A course is unlocked if it shipped unlocked OR a coupon unlocked it.
     final unlockedByCoupon = ref.watch(isCourseUnlockedProvider(course.id));
     final isUnlocked = !course.isLocked || unlockedByCoupon;
-    final lessons = SampleData.lessonsForCourse(course.id);
+    // Bundled sample lessons + admin-uploaded lessons. Remote lessons come
+    // first so anything the teacher uploaded shows up at the top of the
+    // list.
+    final localLessons = SampleData.lessonsForCourse(course.id);
+    final remoteLessons = ref.watch(lessonsForCourseProvider(course.id));
 
     return Scaffold(
       appBar: AppBar(title: Text(course.title)),
@@ -91,7 +97,7 @@ class CourseDetailsScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                '(${lessons.length})',
+                '(${remoteLessons.length + localLessons.length})',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -99,7 +105,13 @@ class CourseDetailsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 8),
-          for (final lesson in lessons)
+          for (final lesson in remoteLessons)
+            _RemoteLessonCard(
+              course: course,
+              lesson: lesson,
+              isUnlocked: isUnlocked,
+            ),
+          for (final lesson in localLessons)
             Card(
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
@@ -216,6 +228,58 @@ class _CourseHeader extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Lesson tile for a remote (Supabase-uploaded) lesson. Plays the lesson via
+/// the shared [LessonPlayerScreen] route which knows how to resolve remote
+/// vs. sample lessons.
+class _RemoteLessonCard extends StatelessWidget {
+  const _RemoteLessonCard({
+    required this.course,
+    required this.lesson,
+    required this.isUnlocked,
+  });
+
+  final Course course;
+  final remote_lesson.Lesson lesson;
+  final bool isUnlocked;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canPlay = isUnlocked || lesson.isFreePreview;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        onTap: canPlay
+            ? () => context.pushNamed(
+                AppRoute.lessonPlayer,
+                pathParameters: {'id': course.id, 'lessonId': lesson.id},
+              )
+            : null,
+        leading: CircleAvatar(
+          backgroundColor: theme.colorScheme.primaryContainer,
+          child: Icon(
+            canPlay ? Icons.play_arrow : Icons.lock_outline,
+            color: theme.colorScheme.onPrimaryContainer,
+          ),
+        ),
+        title: Text(lesson.title),
+        subtitle: Text(
+          lesson.description.isEmpty
+              ? (lesson.isFreePreview ? 'معاينة مجانية' : 'فيديو الدرس')
+              : lesson.description,
+        ),
+        trailing: lesson.isFreePreview
+            ? Chip(
+                label: const Text('عرض مجاني'),
+                backgroundColor: theme.colorScheme.primaryContainer,
+                side: BorderSide.none,
+              )
+            : null,
       ),
     );
   }

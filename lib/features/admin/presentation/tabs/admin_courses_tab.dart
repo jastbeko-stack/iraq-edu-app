@@ -5,6 +5,7 @@ import '../../../../shared/models/course.dart';
 import '../../../../shared/models/teacher.dart';
 import '../../../tracks/domain/learning_track.dart';
 import '../../data/catalog_store.dart';
+import '../screens/admin_course_lessons_screen.dart';
 
 class AdminCoursesTab extends ConsumerStatefulWidget {
   const AdminCoursesTab({super.key});
@@ -141,6 +142,16 @@ class _CourseTile extends ConsumerWidget {
               color: course.isLocked
                   ? theme.colorScheme.error
                   : theme.colorScheme.primary,
+            ),
+            IconButton(
+              tooltip: 'الدروس / الفيديوهات',
+              icon: const Icon(Icons.ondemand_video_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      AdminCourseLessonsScreen(courseId: course.id),
+                ),
+              ),
             ),
             IconButton(
               tooltip: 'تعديل',

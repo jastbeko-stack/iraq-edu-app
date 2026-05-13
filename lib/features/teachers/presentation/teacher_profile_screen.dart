@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../shared/utils/teacher_avatar.dart';
 import '../../admin/data/catalog_store.dart';
 import '../../coupons/data/coupon_repository.dart';
 
@@ -36,25 +37,24 @@ class TeacherProfileScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                backgroundImage:
-                    (teacher.avatarUrl != null &&
-                        teacher.avatarUrl!.isNotEmpty)
-                    ? NetworkImage(teacher.avatarUrl!)
-                    : null,
-                child:
-                    (teacher.avatarUrl != null &&
-                        teacher.avatarUrl!.isNotEmpty)
-                    ? null
-                    : Text(
-                        teacher.name.characters.first,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: theme.colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+              Builder(
+                builder: (_) {
+                  final avatar = teacherAvatarImage(teacher.avatarUrl);
+                  return CircleAvatar(
+                    radius: 36,
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    backgroundImage: avatar,
+                    child: avatar != null
+                        ? null
+                        : Text(
+                            teacher.name.characters.first,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                  );
+                },
               ),
               const SizedBox(width: 14),
               Expanded(

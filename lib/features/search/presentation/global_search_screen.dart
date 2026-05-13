@@ -6,6 +6,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/course.dart';
 import '../../../shared/models/teacher.dart';
+import '../../../shared/utils/teacher_avatar.dart';
 import '../../admin/data/catalog_store.dart';
 import '../../study_guides/domain/study_guide.dart';
 import '../../tracks/data/track_providers.dart';
@@ -361,16 +362,17 @@ class _TeacherTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-          backgroundImage:
-              (teacher.avatarUrl != null && teacher.avatarUrl!.isNotEmpty)
-              ? NetworkImage(teacher.avatarUrl!)
-              : null,
-          child:
-              (teacher.avatarUrl != null && teacher.avatarUrl!.isNotEmpty)
-              ? null
-              : const Icon(Icons.person, color: AppColors.primary),
+        leading: Builder(
+          builder: (_) {
+            final avatar = teacherAvatarImage(teacher.avatarUrl);
+            return CircleAvatar(
+              backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+              backgroundImage: avatar,
+              child: avatar != null
+                  ? null
+                  : const Icon(Icons.person, color: AppColors.primary),
+            );
+          },
         ),
         title: Text(
           teacher.name,

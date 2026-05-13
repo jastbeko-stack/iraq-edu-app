@@ -1,12 +1,12 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../../core/supabase/supabase_config.dart';
 import '../../../../shared/models/teacher.dart';
+import '../../../../shared/utils/teacher_avatar.dart';
 import '../../../tracks/domain/learning_track.dart';
 import '../../data/catalog_store.dart';
 
@@ -128,14 +128,13 @@ class _TeacherTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final track = LearningTrack.fromId(teacher.trackId);
 
-    final avatarUrl = teacher.avatarUrl;
-    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+    final avatar = teacherAvatarImage(teacher.avatarUrl);
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.primaryContainer,
-          backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
-          child: hasAvatar
+          backgroundImage: avatar,
+          child: avatar != null
               ? null
               : Text(
                   teacher.name.characters.first,
@@ -211,14 +210,10 @@ class _TeacherFormState extends State<TeacherForm> {
   late final TextEditingController _studentsCount;
   late LearningTrack _track;
 
-  /// In-memory bytes of an image picked but not yet uploaded.
-  Uint8List? _pickedBytes;
-  String? _pickedExt;
-
-  /// Persisted public URL of the saved avatar (either pre-existing or just
-  /// uploaded). When the user picks a new image but hasn't saved yet, we keep
-  /// the previous URL here for the "existing" case so canceling doesn't lose
-  /// the old avatar.
+  /// Encoded `data:image/<ext>;base64,<payload>` URL for the picked or
+  /// pre-existing avatar. Storing the bytes inline in the teacher record (in
+  /// SharedPreferences) means we never need Supabase Storage RLS for an admin
+  /// edit to succeed.
   String? _avatarUrl;
 
   bool _submitting = false;
@@ -242,6 +237,10 @@ class _TeacherFormState extends State<TeacherForm> {
     _avatarUrl = e?.avatarUrl;
   }
 
+  /// Cap on the picked image size. Pictures are stored as base64 inside the
+  /// teacher record so we don't want huge payloads bloating shared prefs.
+  static const int _maxAvatarBytes = 1024 * 1024; // 1 MB
+
   @override
   void dispose() {
     _name.dispose();
@@ -254,7 +253,7 @@ class _TeacherFormState extends State<TeacherForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Form(
         key: _formKey,
@@ -270,7 +269,6 @@ class _TeacherFormState extends State<TeacherForm> {
             ),
             const SizedBox(height: 14),
             _AvatarPicker(
-              bytes: _pickedBytes,
               url: _avatarUrl,
               name: _name.text,
               onPick: _pickAvatar,
@@ -361,9 +359,18 @@ class _TeacherFormState extends State<TeacherForm> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: _submit,
-                    icon: const Icon(Icons.save_outlined),
-                    label: const Text('حفظ'),
+                    onPressed: _submitting ? null : _submit,
+                    icon: _submitting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.save_outlined),
+                    label: Text(_submitting ? 'جاري الحفظ…' : 'حفظ'),
                   ),
                 ),
               ],
@@ -380,42 +387,31 @@ class _TeacherFormState extends State<TeacherForm> {
       withData: true,
     );
     final file = result?.files.firstOrNull;
-    final bytes = file?.bytes;
+    final Uint8List? bytes = file?.bytes;
     if (bytes == null) return;
+    if (bytes.length > _maxAvatarBytes) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'الصورة أكبر من 1 ميجا. اختر صورة أصغر أو صغّرها أولاً.',
+          ),
+        ),
+      );
+      return;
+    }
+    final ext = (file?.extension ?? 'jpg').toLowerCase();
+    final mime = _mimeFor(ext);
+    final encoded = base64Encode(bytes);
     setState(() {
-      _pickedBytes = bytes;
-      _pickedExt = (file?.extension ?? 'jpg').toLowerCase();
+      _avatarUrl = 'data:$mime;base64,$encoded';
     });
   }
 
   void _clearAvatar() {
     setState(() {
-      _pickedBytes = null;
-      _pickedExt = null;
       _avatarUrl = null;
     });
-  }
-
-  Future<String?> _uploadAvatarIfNeeded(String teacherId) async {
-    final bytes = _pickedBytes;
-    if (bytes == null) return _avatarUrl;
-    final ext = _pickedExt ?? 'jpg';
-    final objectPath = 'teacher-avatars/$teacherId.$ext';
-    final storage = Supabase.instance.client.storage.from(
-      SupabaseConfig.pdfBucket,
-    );
-    await storage.uploadBinary(
-      objectPath,
-      bytes,
-      fileOptions: FileOptions(
-        contentType: _mimeFor(ext),
-        upsert: true,
-      ),
-    );
-    final publicUrl = storage.getPublicUrl(objectPath);
-    // Append a cache-buster so the new image shows immediately when the same
-    // path is overwritten on an edit.
-    return '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
   }
 
   String _mimeFor(String ext) {
@@ -439,17 +435,6 @@ class _TeacherFormState extends State<TeacherForm> {
     setState(() => _submitting = true);
     final id =
         widget.existing?.id ?? 't_${DateTime.now().millisecondsSinceEpoch}';
-    String? avatarUrl;
-    try {
-      avatarUrl = await _uploadAvatarIfNeeded(id);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _submitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذّر رفع الصورة: $e')),
-      );
-      return;
-    }
     final teacher = Teacher(
       id: id,
       name: _name.text.trim(),
@@ -458,7 +443,7 @@ class _TeacherFormState extends State<TeacherForm> {
       coursesCount: int.tryParse(_coursesCount.text.trim()) ?? 0,
       studentsCount: int.tryParse(_studentsCount.text.trim()) ?? 0,
       trackId: _track.id,
-      avatarUrl: avatarUrl,
+      avatarUrl: _avatarUrl,
     );
     if (!mounted) return;
     Navigator.pop(context, teacher);
@@ -466,19 +451,17 @@ class _TeacherFormState extends State<TeacherForm> {
 }
 
 /// Round avatar preview with a primary button to pick a new image and a
-/// secondary action to clear the current avatar. Shows the freshly picked
-/// bytes if any, otherwise the persisted URL, otherwise an initial-letter
-/// placeholder.
+/// secondary action to clear the current avatar. Renders any URL — including
+/// `data:image/...;base64,...` data URLs, which is how locally-picked avatars
+/// are stored — via the helper in [teacherAvatarImage].
 class _AvatarPicker extends StatelessWidget {
   const _AvatarPicker({
-    required this.bytes,
     required this.url,
     required this.name,
     required this.onPick,
     required this.onClear,
   });
 
-  final Uint8List? bytes;
   final String? url;
   final String name;
   final VoidCallback onPick;
@@ -487,14 +470,9 @@ class _AvatarPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasImage = bytes != null || (url != null && url!.isNotEmpty);
+    final hasImage = url != null && url!.isNotEmpty;
     final initial = name.trim().isEmpty ? 'م' : name.trim()[0];
-    ImageProvider? provider;
-    if (bytes != null) {
-      provider = MemoryImage(bytes!);
-    } else if (url != null && url!.isNotEmpty) {
-      provider = NetworkImage(url!);
-    }
+    final provider = teacherAvatarImage(url);
     return Row(
       children: [
         CircleAvatar(

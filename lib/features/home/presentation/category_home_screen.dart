@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 import '../../../shared/models/course.dart';
 import '../../../shared/models/teacher.dart';
+import '../../../shared/utils/teacher_avatar.dart';
 import '../../coupons/data/coupon_repository.dart';
 import '../../tracks/data/track_providers.dart';
 import '../../tracks/domain/learning_track.dart';
@@ -232,25 +233,24 @@ class _TeacherCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  backgroundImage:
-                      (teacher.avatarUrl != null &&
-                          teacher.avatarUrl!.isNotEmpty)
-                      ? NetworkImage(teacher.avatarUrl!)
-                      : null,
-                  child:
-                      (teacher.avatarUrl != null &&
-                          teacher.avatarUrl!.isNotEmpty)
-                      ? null
-                      : Text(
-                          teacher.name.characters.first,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                Builder(
+                  builder: (_) {
+                    final avatar = teacherAvatarImage(teacher.avatarUrl);
+                    return CircleAvatar(
+                      radius: 28,
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      backgroundImage: avatar,
+                      child: avatar != null
+                          ? null
+                          : Text(
+                              teacher.name.characters.first,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: theme.colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 10),
                 Text(

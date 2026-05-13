@@ -235,13 +235,22 @@ class _TeacherCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 28,
                   backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Text(
-                    teacher.name.characters.first,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  backgroundImage:
+                      (teacher.avatarUrl != null &&
+                          teacher.avatarUrl!.isNotEmpty)
+                      ? NetworkImage(teacher.avatarUrl!)
+                      : null,
+                  child:
+                      (teacher.avatarUrl != null &&
+                          teacher.avatarUrl!.isNotEmpty)
+                      ? null
+                      : Text(
+                          teacher.name.characters.first,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 10),
                 Text(

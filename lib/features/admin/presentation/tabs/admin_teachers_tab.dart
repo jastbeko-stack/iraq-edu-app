@@ -1,6 +1,11 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/supabase/supabase_config.dart';
 import '../../../../shared/models/teacher.dart';
 import '../../../tracks/domain/learning_track.dart';
 import '../../data/catalog_store.dart';
@@ -123,17 +128,22 @@ class _TeacherTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final track = LearningTrack.fromId(teacher.trackId);
 
+    final avatarUrl = teacher.avatarUrl;
+    final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
     return Card(
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: theme.colorScheme.primaryContainer,
-          child: Text(
-            teacher.name.characters.first,
-            style: TextStyle(
-              color: theme.colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
+          child: hasAvatar
+              ? null
+              : Text(
+                  teacher.name.characters.first,
+                  style: TextStyle(
+                    color: theme.colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
         ),
         title: Text(teacher.name),
         subtitle: Text(
@@ -201,6 +211,18 @@ class _TeacherFormState extends State<TeacherForm> {
   late final TextEditingController _studentsCount;
   late LearningTrack _track;
 
+  /// In-memory bytes of an image picked but not yet uploaded.
+  Uint8List? _pickedBytes;
+  String? _pickedExt;
+
+  /// Persisted public URL of the saved avatar (either pre-existing or just
+  /// uploaded). When the user picks a new image but hasn't saved yet, we keep
+  /// the previous URL here for the "existing" case so canceling doesn't lose
+  /// the old avatar.
+  String? _avatarUrl;
+
+  bool _submitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -217,6 +239,7 @@ class _TeacherFormState extends State<TeacherForm> {
     _track = e == null
         ? LearningTrack.preparatory
         : LearningTrack.fromId(e.trackId) ?? LearningTrack.preparatory;
+    _avatarUrl = e?.avatarUrl;
   }
 
   @override
@@ -244,6 +267,14 @@ class _TeacherFormState extends State<TeacherForm> {
               style: Theme.of(
                 context,
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 14),
+            _AvatarPicker(
+              bytes: _pickedBytes,
+              url: _avatarUrl,
+              name: _name.text,
+              onPick: _pickAvatar,
+              onClear: _clearAvatar,
             ),
             const SizedBox(height: 14),
             DropdownButtonFormField<LearningTrack>(
@@ -343,10 +374,82 @@ class _TeacherFormState extends State<TeacherForm> {
     );
   }
 
-  void _submit() {
+  Future<void> _pickAvatar() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    final file = result?.files.firstOrNull;
+    final bytes = file?.bytes;
+    if (bytes == null) return;
+    setState(() {
+      _pickedBytes = bytes;
+      _pickedExt = (file?.extension ?? 'jpg').toLowerCase();
+    });
+  }
+
+  void _clearAvatar() {
+    setState(() {
+      _pickedBytes = null;
+      _pickedExt = null;
+      _avatarUrl = null;
+    });
+  }
+
+  Future<String?> _uploadAvatarIfNeeded(String teacherId) async {
+    final bytes = _pickedBytes;
+    if (bytes == null) return _avatarUrl;
+    final ext = _pickedExt ?? 'jpg';
+    final objectPath = 'teacher-avatars/$teacherId.$ext';
+    final storage = Supabase.instance.client.storage.from(
+      SupabaseConfig.pdfBucket,
+    );
+    await storage.uploadBinary(
+      objectPath,
+      bytes,
+      fileOptions: FileOptions(
+        contentType: _mimeFor(ext),
+        upsert: true,
+      ),
+    );
+    final publicUrl = storage.getPublicUrl(objectPath);
+    // Append a cache-buster so the new image shows immediately when the same
+    // path is overwritten on an edit.
+    return '$publicUrl?v=${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  String _mimeFor(String ext) {
+    switch (ext) {
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      case 'gif':
+        return 'image/gif';
+      case 'jpg':
+      case 'jpeg':
+      default:
+        return 'image/jpeg';
+    }
+  }
+
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_submitting) return;
+    setState(() => _submitting = true);
     final id =
         widget.existing?.id ?? 't_${DateTime.now().millisecondsSinceEpoch}';
+    String? avatarUrl;
+    try {
+      avatarUrl = await _uploadAvatarIfNeeded(id);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذّر رفع الصورة: $e')),
+      );
+      return;
+    }
     final teacher = Teacher(
       id: id,
       name: _name.text.trim(),
@@ -355,7 +458,81 @@ class _TeacherFormState extends State<TeacherForm> {
       coursesCount: int.tryParse(_coursesCount.text.trim()) ?? 0,
       studentsCount: int.tryParse(_studentsCount.text.trim()) ?? 0,
       trackId: _track.id,
+      avatarUrl: avatarUrl,
     );
+    if (!mounted) return;
     Navigator.pop(context, teacher);
+  }
+}
+
+/// Round avatar preview with a primary button to pick a new image and a
+/// secondary action to clear the current avatar. Shows the freshly picked
+/// bytes if any, otherwise the persisted URL, otherwise an initial-letter
+/// placeholder.
+class _AvatarPicker extends StatelessWidget {
+  const _AvatarPicker({
+    required this.bytes,
+    required this.url,
+    required this.name,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final Uint8List? bytes;
+  final String? url;
+  final String name;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasImage = bytes != null || (url != null && url!.isNotEmpty);
+    final initial = name.trim().isEmpty ? 'م' : name.trim()[0];
+    ImageProvider? provider;
+    if (bytes != null) {
+      provider = MemoryImage(bytes!);
+    } else if (url != null && url!.isNotEmpty) {
+      provider = NetworkImage(url!);
+    }
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 38,
+          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+          backgroundImage: provider,
+          child: provider == null
+              ? Text(
+                  initial,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.primary,
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              OutlinedButton.icon(
+                onPressed: onPick,
+                icon: const Icon(Icons.image_outlined),
+                label: Text(hasImage ? 'تغيير الصورة' : 'اختر صورة'),
+              ),
+              if (hasImage) ...[
+                const SizedBox(height: 6),
+                TextButton.icon(
+                  onPressed: onClear,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('إزالة الصورة'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

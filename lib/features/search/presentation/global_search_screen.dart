@@ -363,7 +363,14 @@ class _TeacherTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-          child: const Icon(Icons.person, color: AppColors.primary),
+          backgroundImage:
+              (teacher.avatarUrl != null && teacher.avatarUrl!.isNotEmpty)
+              ? NetworkImage(teacher.avatarUrl!)
+              : null,
+          child:
+              (teacher.avatarUrl != null && teacher.avatarUrl!.isNotEmpty)
+              ? null
+              : const Icon(Icons.person, color: AppColors.primary),
         ),
         title: Text(
           teacher.name,

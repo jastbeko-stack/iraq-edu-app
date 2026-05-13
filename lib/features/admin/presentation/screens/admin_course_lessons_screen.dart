@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -235,7 +236,8 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
   String? _existingVideoUrl;
 
   bool _submitting = false;
-  double? _uploadProgress;
+  Timer? _elapsedTimer;
+  Duration _elapsed = Duration.zero;
 
   @override
   void initState() {
@@ -249,9 +251,24 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
 
   @override
   void dispose() {
+    _elapsedTimer?.cancel();
     _title.dispose();
     _description.dispose();
     super.dispose();
+  }
+
+  String get _pickedSizeLabel {
+    final bytes = _pickedBytes?.length ?? 0;
+    if (bytes == 0) return '';
+    final mb = bytes / (1024 * 1024);
+    return '${mb.toStringAsFixed(mb >= 10 ? 0 : 1)} ميغا';
+  }
+
+  String _formatElapsed(Duration d) {
+    final m = d.inMinutes;
+    final s = d.inSeconds % 60;
+    if (m == 0) return '${s}s';
+    return '${m}m ${s}s';
   }
 
   @override
@@ -307,13 +324,30 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
               onPick: _pickVideo,
               onClear: _clearPickedVideo,
             ),
-            if (_uploadProgress != null) ...[
-              const SizedBox(height: 10),
-              LinearProgressIndicator(value: _uploadProgress),
-              const SizedBox(height: 4),
+            if (_pickedBytes != null && !_submitting) ...[
+              const SizedBox(height: 8),
               Text(
-                'جاري الرفع… ${((_uploadProgress ?? 0) * 100).clamp(0, 100).toStringAsFixed(0)}%',
+                'حجم الفيديو: $_pickedSizeLabel',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            if (_submitting) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+              const SizedBox(height: 6),
+              Text(
+                'جاري الرفع… ${_formatElapsed(_elapsed)}'
+                '${_pickedBytes != null ? '  •  $_pickedSizeLabel' : ''}',
                 style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'قد يستغرق دقائق حسب سرعة الإنترنت. لا تغلق الصفحة.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
             const SizedBox(height: 18),
@@ -360,14 +394,18 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
     final file = result?.files.firstOrNull;
     final bytes = file?.bytes;
     if (bytes == null || file == null) return;
-    // Cap at 200 MB per upload to keep the free Supabase tier happy and avoid
-    // browser memory pressure on web.
-    const maxBytes = 200 * 1024 * 1024;
+    // Cap at 100 MB on web — Safari/iOS holds the whole file in memory
+    // (file_picker `withData: true`), and larger files routinely OOM the tab.
+    const maxBytes = 100 * 1024 * 1024;
     if (bytes.length > maxBytes) {
       if (!mounted) return;
+      final mb = (bytes.length / (1024 * 1024)).toStringAsFixed(0);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('الفيديو أكبر من 200 ميغا. ضغّطه أو اختر ملف أصغر.'),
+        SnackBar(
+          content: Text(
+            'الفيديو حجمه $mb ميغا — الحد الأقصى 100 ميغا. ضغّطه أو اختر ملف أصغر.',
+          ),
+          duration: const Duration(seconds: 6),
         ),
       );
       return;
@@ -397,7 +435,10 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
     }
     setState(() {
       _submitting = true;
-      _uploadProgress = _pickedBytes == null ? null : 0;
+      _elapsed = Duration.zero;
+    });
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _elapsed += const Duration(seconds: 1));
     });
     final svc = ref.read(lessonsServiceProvider);
     try {
@@ -455,14 +496,19 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
       ).showSnackBar(const SnackBar(content: Text('تم حفظ الدرس')));
     } catch (e) {
       if (!mounted) return;
+      _elapsedTimer?.cancel();
       setState(() {
         _submitting = false;
-        _uploadProgress = null;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('تعذّر الحفظ: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تعذّر الحفظ: $e'),
+          duration: const Duration(seconds: 8),
+        ),
+      );
+      return;
     }
+    _elapsedTimer?.cancel();
   }
 }
 

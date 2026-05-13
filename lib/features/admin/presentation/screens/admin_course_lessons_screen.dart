@@ -444,13 +444,14 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
     try {
       String videoUrl = _existingVideoUrl ?? '';
       if (_pickedBytes != null) {
-        // Generate a temporary id for new lessons so the object path is
-        // stable; for edits we keep the existing id and replace the file.
-        final lessonId =
-            widget.existing?.id ?? 'l_${DateTime.now().millisecondsSinceEpoch}';
+        // Storage path uses a free-form opaque key — it does NOT need to match
+        // the row's uuid (which Postgres generates). For edits we replace the
+        // file at the existing lesson's id so old links keep working.
+        final storageKey = widget.existing?.id ??
+            'new-${DateTime.now().millisecondsSinceEpoch}';
         videoUrl = await svc.uploadVideo(
           courseId: widget.courseId,
-          lessonId: lessonId,
+          lessonId: storageKey,
           bytes: _pickedBytes!,
           fileExtension: _pickedExt ?? 'mp4',
         );
@@ -460,7 +461,7 @@ class _LessonFormState extends ConsumerState<_LessonForm> {
         if (widget.existing == null) {
           await svc.insertLesson(
             Lesson(
-              id: lessonId,
+              id: '', // ignored — Postgres assigns the uuid
               courseId: widget.courseId,
               title: _title.text.trim(),
               description: _description.text.trim(),

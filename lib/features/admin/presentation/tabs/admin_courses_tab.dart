@@ -144,8 +144,9 @@ class _CourseTile extends ConsumerWidget {
                   : theme.colorScheme.primary,
             ),
             IconButton(
-              tooltip: 'الدروس / الفيديوهات',
-              icon: const Icon(Icons.ondemand_video_outlined),
+              tooltip: 'رفع/إدارة الفيديوهات',
+              icon: const Icon(Icons.file_upload_outlined),
+              color: theme.colorScheme.primary,
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) =>
